@@ -46,6 +46,9 @@
     return Math.round(n * f) / f;
   };
 
+  const arr = (x) => (x == null ? [] : Array.isArray(x) ? x : [x]);
+  const iso = (ms) => (ms && ms > 1e12 ? new Date(ms).toISOString() : null);
+
   // ---- Schema-drift detection -------------------------------------------
   // The mappers rely on stable protobuf field numbers. If XTB renumbers a
   // field, our named output silently shifts. We guard with invariants that
@@ -63,7 +66,7 @@
   function mapRetirementAccounts(frames) {
     const out = [];
     for (const fr of frames) {
-      const list = fr && fr.f1 ? (Array.isArray(fr.f1) ? fr.f1 : [fr.f1]) : [];
+      const list = arr(fr && fr.f1);
       for (const a of list) {
         out.push({
           bucket: RETIREMENT_TYPE[a.f1] || 'type' + a.f1,
@@ -89,8 +92,7 @@
       }
     }
     if (!best || !best.f2) return [];
-    const groups = Array.isArray(best.f2) ? best.f2 : [best.f2];
-    const iso = (ms) => (ms && ms > 1e12 ? new Date(ms).toISOString() : null);
+    const groups = arr(best.f2);
     const rows = [];
     for (const g of groups) {
       const inst = g.f2 && g.f2.f1 && g.f2.f1.f1;
@@ -104,7 +106,7 @@
       if (!approx(marketValue - cost, netPL, Math.max(1, Math.abs(netPL) * 0.02)))
         warn('positions: P/L != marketValue - cost — field mapping may have changed');
       // Individual purchase tranches (lots) — useful for per-transaction analysis.
-      const lotsRaw = g.f2 && g.f2.f2 ? (Array.isArray(g.f2.f2) ? g.f2.f2 : [g.f2.f2]) : [];
+      const lotsRaw = arr(g.f2 && g.f2.f2);
       const lots = lotsRaw
         .map((l) => ({
           volume: l.f3 ? round(decimal(l.f3.f1), 6) : null,
@@ -143,10 +145,9 @@
     let root = null;
     for (const f of frames) if (f && f.f2 && f.f2.f5) root = f.f2;
     if (!root) return { totalValue: 0, totalPL: 0, currency: null, plans: [] };
-    const plansRaw = Array.isArray(root.f5) ? root.f5 : [root.f5];
-    const iso = (ms) => (ms && ms > 1e12 ? new Date(ms).toISOString() : null);
+    const plansRaw = arr(root.f5);
     const plans = plansRaw.map((p) => {
-      const holdingsRaw = p.f13 ? (Array.isArray(p.f13) ? p.f13 : [p.f13]) : [];
+      const holdingsRaw = arr(p.f13);
       return {
         planId: p.f1,
         name: p.f3,
@@ -218,7 +219,6 @@
       if (/SubscribePortfolioPositionGroups/.test(method)) return 'positions';
       if (/SavingsPortfolioSubscribe/.test(method)) return 'savings';
       if (/GetAccountBalance/.test(method)) return 'balance';
-      if (/SubscribeOrderGroups/.test(method)) return 'orders';
       return 'other';
     },
   };

@@ -42,6 +42,20 @@ keep the 1.0 release clean; re-add it together with the iframe injection below._
 4. The extra `xcontainer.xtb.com` host permission must be disclosed in the store
    listing / PRIVACY.md.
 
+## Refactors (deferred from /simplify — behavior-affecting, not worth the risk pre-1.0)
+
+- **Opaque bucket IDs.** `content.js` uses English display strings (`My
+  Transactions`, `Investment Plans`) as the canonical bucket keys that flow
+  through storage and CSV exports, so `popup.js` keeps a parallel translation
+  table to re-map them for i18n. A cleaner design emits stable IDs (`main`,
+  `plans`, `IKE`, `IKZE`) from the data layer and lets the popup own every
+  label. Skipped for now: it changes stored keys and export column values.
+- **Single method registry.** The set of captured gRPC methods is declared in
+  three shapes — `inject.js` `ALLOW`, `mappers.js` `match()`, `content.js`
+  `ingest` branches. Deriving all three from one `method → key → mapper` table
+  would stop them drifting. Skipped: touches all three files with no user-facing
+  win.
+
 ## Ideas (not scheduled)
 
 - Auto-snapshot in the background (alarms) to build history without manual clicks

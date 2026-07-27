@@ -19,7 +19,7 @@
   // Only these methods are teed/decoded. Everything else (esp. the high-rate
   // InstrumentQuoteService quote stream) is left completely untouched — teeing
   // and decoding that stream is what froze the page.
-  const ALLOW = /(SubscribePortfolioPositionGroups|GetAccountBalance|SavingsPortfolioSubscribe|GetRetirementAccounts|GetAccountDepositLimitWithPositionInfo|SubscribeOrderGroups)/;
+  const ALLOW = /(SubscribePortfolioPositionGroups|GetAccountBalance|SavingsPortfolioSubscribe|GetRetirementAccounts)/;
 
   function methodName(url) {
     const path = url.split('/').slice(3).join('/');

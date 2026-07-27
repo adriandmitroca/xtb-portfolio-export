@@ -15,7 +15,6 @@
   const state = { retirement: [], caps: {}, history: [] };
 
   const capKey = (method, account) => method + '|' + (account ? account.accountNo : 'unknown');
-  const round2 = (n) => Math.round(n * 100) / 100;
 
   function persist() {
     try {
@@ -23,6 +22,17 @@
     } catch (e) {
       /* storage unavailable */
     }
+  }
+
+  // Streaming subscriptions re-post on every frame; coalesce the writes so a
+  // burst of frames results in one storage.set instead of dozens.
+  let persistTimer = null;
+  function schedulePersist() {
+    if (persistTimer) return;
+    persistTimer = setTimeout(() => {
+      persistTimer = null;
+      persist();
+    }, 300);
   }
 
   function load(cb) {
@@ -54,7 +64,7 @@
     if (key === 'positions' || key === 'savings' || key === 'balance') {
       state.caps[capKey(method, account)] = { method, key, account: account || null, frames, receivedAt: new Date().toISOString() };
     }
-    persist();
+    schedulePersist();
   }
 
   function bucketOf(accountNo) {
@@ -102,11 +112,11 @@
     for (const [b, v] of Object.entries(agg)) {
       const free = freeByBucket[b] || 0;
       buckets[b] = {
-        value: round2(v.marketValue + free),
-        marketValue: round2(v.marketValue),
-        freeFunds: round2(free),
-        cost: round2(v.cost),
-        netPL: round2(v.netPL),
+        value: MAP.round(v.marketValue + free),
+        marketValue: MAP.round(v.marketValue),
+        freeFunds: MAP.round(free),
+        cost: MAP.round(v.cost),
+        netPL: MAP.round(v.netPL),
         positions: v.positions,
       };
       total.marketValue += v.marketValue;
@@ -122,11 +132,11 @@
       summary: {
         buckets,
         total: {
-          value: round2(total.value),
-          marketValue: round2(total.marketValue),
-          freeFunds: round2(total.freeFunds),
-          cost: round2(total.cost),
-          netPL: round2(total.netPL),
+          value: MAP.round(total.value),
+          marketValue: MAP.round(total.marketValue),
+          freeFunds: MAP.round(total.freeFunds),
+          cost: MAP.round(total.cost),
+          netPL: MAP.round(total.netPL),
         },
       },
       retirementAccounts: state.retirement,

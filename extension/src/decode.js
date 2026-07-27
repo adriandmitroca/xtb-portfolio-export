@@ -5,12 +5,7 @@
 (function () {
   'use strict';
 
-  function b64ToU8(b64) {
-    const bin = atob(b64);
-    const u8 = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
-    return u8;
-  }
+  const UTF8 = new TextDecoder('utf-8', { fatal: true });
 
   // gRPC-Web wire: [1 flag byte][4-byte big-endian length][payload], repeated.
   // Data frames have flag & 0x80 === 0; the trailer frame has flag 0x80.
@@ -82,7 +77,7 @@
           s.i += len;
           let str = null;
           try {
-            str = new TextDecoder('utf-8', { fatal: true }).decode(sub);
+            str = UTF8.decode(sub);
           } catch (e) {
             /* not utf-8 */
           }
@@ -111,10 +106,5 @@
     return out;
   }
 
-  function decodeGrpcWebBase64(b64) {
-    const u8 = b64ToU8(b64);
-    return dataFrames(u8).map((f) => decode(f.payload));
-  }
-
-  window.__XTB_DECODE = { b64ToU8, grpcFrames, dataFrames, decode, decodeGrpcWebBase64 };
+  window.__XTB_DECODE = { grpcFrames, dataFrames, decode };
 })();
