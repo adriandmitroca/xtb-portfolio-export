@@ -1,0 +1,51 @@
+name: Release
+
+# Publishes to the Chrome Web Store when you push a tag like `v0.3.0`.
+# The tag MUST match the version in extension/manifest.json.
+#
+# One-time setup (see RELEASE.md): create the item with a manual upload once,
+# then add these repository secrets:
+#   CHROME_EXTENSION_ID, CHROME_CLIENT_ID, CHROME_CLIENT_SECRET, CHROME_REFRESH_TOKEN
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Tag must match manifest version
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VER="$(node -e "process.stdout.write(require('./extension/manifest.json').version)")"
+          echo "tag=$TAG  manifest=$VER"
+          if [ "$TAG" != "$VER" ]; then
+            echo "::error::Tag v$TAG does not match manifest version $VER. Bump the manifest and re-tag."
+            exit 1
+          fi
+
+      - name: Build package
+        id: build
+        run: |
+          bash scripts/build.sh
+          VER="$(node -e "process.stdout.write(require('./extension/manifest.json').version)")"
+          echo "zip=dist/xtb-portfolio-export-$VER.zip" >> "$GITHUB_OUTPUT"
+
+      - name: Publish to Chrome Web Store
+        uses: mnao305/chrome-extension-upload@v5.0.0
+        with:
+          file-path: ${{ steps.build.outputs.zip }}
+          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          publish: true

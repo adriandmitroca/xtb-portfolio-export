@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { background: #0b0e13; }
+      .wrap {
+        width: 100vw; height: 100vh; overflow: hidden; position: relative;
+        display: flex; align-items: center; gap: 60px; padding: 0 80px;
+        background: radial-gradient(900px 620px at 80% 14%, #17222f 0%, #0b0e13 62%);
+        font: 15px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; color: #e8edf2;
+      }
+      .wrap::after { content: ""; position: absolute; left: -120px; bottom: -180px; width: 520px; height: 520px;
+        background: radial-gradient(circle, rgba(23,199,132,0.12), transparent 62%); }
+      .left { flex: 1; position: relative; z-index: 2; }
+      .brand { display: flex; align-items: center; gap: 16px; margin-bottom: 26px; }
+      .icon { width: 60px; height: 60px; border-radius: 15px; flex: 0 0 auto;
+        background: linear-gradient(160deg, #141a22, #0c141c);
+        display: flex; align-items: flex-end; justify-content: center; gap: 5px; padding-bottom: 15px;
+        box-shadow: 0 10px 26px rgba(0,0,0,.5); }
+      .icon i { width: 7px; border-radius: 2px 2px 0 0; }
+      .icon i:nth-child(1) { height: 15px; background: #1a7a58; }
+      .icon i:nth-child(2) { height: 23px; background: #18a06e; }
+      .icon i:nth-child(3) { height: 33px; background: #17c784; }
+      .brand .bt { font-size: 21px; font-weight: 700; letter-spacing: -0.4px; }
+      .brand .bs { font-size: 12px; color: #7d8895; margin-top: 2px; }
+      h1 { font-size: 46px; line-height: 1.1; font-weight: 750; letter-spacing: -1.3px; }
+      h1 .accent { color: #17c784; }
+      .sub { font-size: 18px; color: #aab4bf; margin-top: 18px; max-width: 500px; line-height: 1.5; }
+      .chips { display: flex; gap: 10px; margin-top: 26px; }
+      .chip { font-size: 12.5px; color: #cdd5dd; background: rgba(255,255,255,0.04); border: 1px solid #232a33; border-radius: 999px; padding: 7px 14px; }
+
+      .right { flex: 0 0 auto; position: relative; z-index: 2; }
+      .pop { width: 350px; background: #0b0e13; border: 1px solid #232a33; border-radius: 16px; overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,0.55); }
+      .ph { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid #232a33; }
+      .mk { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, #16324a, #0f2233); display: flex; align-items: flex-end; justify-content: center; gap: 2.5px; padding-bottom: 5px; }
+      .mk i { width: 3px; border-radius: 1px; background: #17c784; }
+      .mk i:nth-child(1) { height: 6px; opacity:.7; } .mk i:nth-child(2) { height: 9px; opacity:.85; } .mk i:nth-child(3) { height: 12px; }
+      .pt { font-weight: 650; font-size: 14px; }
+      .pv { margin-left: auto; font-size: 11px; color: #7d8895; }
+      .pb { padding: 15px 18px 16px; }
+      .lab { font-size: 10.5px; color: #7d8895; text-transform: uppercase; letter-spacing: .6px; }
+      .big { font-size: 26px; font-weight: 700; letter-spacing: -0.6px; margin-top: 3px; }
+      .pl { margin-top: 4px; font-size: 13px; font-weight: 600; color: #17c784; }
+      .pl .m { color: #7d8895; font-weight: 500; margin-left: 6px; }
+      .bks { margin: 14px 0 0; border: 1px solid #232a33; border-radius: 11px; overflow: hidden; }
+      .row { display: flex; align-items: center; padding: 9px 13px; background: #151a21; border-top: 1px solid #232a33; }
+      .row:first-child { border-top: 0; }
+      .row .bn { font-weight: 550; font-size: 12.5px; }
+      .row .rv { margin-left: auto; font-size: 12.5px; }
+      .row .rp { font-size: 10.5px; font-weight: 600; color: #17c784; margin-left: 10px; width: 46px; text-align: right; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <div class="left">
+        <div class="brand">
+          <div class="icon"><i></i><i></i><i></i></div>
+          <div><div class="bt">Portfolio Export for XTB</div><div class="bs">unofficial · runs 100% locally</div></div>
+        </div>
+        <h1>Your whole portfolio,<br /><span class="accent">exported to JSON / CSV.</span></h1>
+        <div class="sub">Positions, P&amp;L, IKE, IKZE, plans and history — captured in one click, ready for your own analysis.</div>
+        <div class="chips">
+          <span class="chip">One-click capture</span>
+          <span class="chip">Purchase lots &amp; dates</span>
+          <span class="chip">No data leaves the browser</span>
+        </div>
+      </div>
+      <div class="right">
+        <div class="pop">
+          <div class="ph"><div class="mk"><i></i><i></i><i></i></div><div class="pt">Portfolio Export</div><div class="pv">v1.0</div></div>
+          <div class="pb">
+            <div class="lab">Portfolio value</div>
+            <div class="big">PLN 142,580.00</div>
+            <div class="pl">▲ +PLN 11,240.00<span class="m">+8.55%</span></div>
+            <div class="bks">
+              <div class="row"><span class="bn">My Transactions</span><span class="rv">PLN 19,300.00</span><span class="rp">+8.90%</span></div>
+              <div class="row"><span class="bn">IKE</span><span class="rv">PLN 61,400.00</span><span class="rp">+13.20%</span></div>
+              <div class="row"><span class="bn">IKZE</span><span class="rv">PLN 34,380.00</span><span class="rp">+6.80%</span></div>
+              <div class="row"><span class="bn">Investment Plans</span><span class="rv">PLN 27,500.00</span><span class="rp">+4.10%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

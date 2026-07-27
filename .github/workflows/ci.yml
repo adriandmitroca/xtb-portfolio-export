@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Validate manifest JSON
+        run: node -e "JSON.parse(require('fs').readFileSync('extension/manifest.json','utf8'))"
+
+      - name: JS syntax check
+        run: |
+          for f in extension/src/*.js extension/popup.js scripts/*.js test/*.js; do
+            node --check "$f"
+          done
+
+      - name: Validate _locales JSON
+        run: |
+          for f in extension/_locales/*/messages.json; do
+            node -e "JSON.parse(require('fs').readFileSync('$f','utf8'))"
+          done
+
+      - name: Unit tests
+        run: node test/run.js
+
+      - name: No Unicode noncharacters in content-script JS
+        run: |
+          python3 - <<'PY'
+          import glob, sys
+          bad = []
+          for f in glob.glob('extension/src/*.js') + ['extension/popup.js']:
+              t = open(f, encoding='utf-8').read()
+              if any(ord(c) in (0xFFFE, 0xFFFF) or 0xFDD0 <= ord(c) <= 0xFDEF for c in t):
+                  bad.append(f)
+          if bad:
+              print('Unicode noncharacters (Chrome rejects these) in:', bad)
+              sys.exit(1)
+          print('clean')
+          PY
+
+      - name: Build package
+        run: bash scripts/build.sh
+
+      - name: Upload zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: extension-zip
+          path: dist/*.zip

@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { background: #0b0e13; }
+      body { font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; color: #e8edf2; }
+      .slide {
+        width: 100vw; height: 100vh; position: relative; overflow: hidden;
+        display: flex; align-items: center; gap: 64px; padding: 0 90px;
+        background: radial-gradient(1100px 700px at 78% 18%, #17222f 0%, #0b0e13 60%);
+      }
+      .slide::after {
+        content: ""; position: absolute; left: -140px; bottom: -160px; width: 520px; height: 520px;
+        background: radial-gradient(circle, rgba(23,199,132,0.12), transparent 62%);
+      }
+      .left { flex: 1; position: relative; z-index: 2; }
+      .kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #17c784; letter-spacing: 0.4px; margin-bottom: 20px; }
+      .kicker .dot { width: 7px; height: 7px; border-radius: 50%; background: #17c784; }
+      h1 { font-size: 52px; line-height: 1.08; font-weight: 750; letter-spacing: -1.4px; margin-bottom: 20px; }
+      h1 .accent { color: #17c784; }
+      .sub { font-size: 19px; color: #aab4bf; max-width: 480px; line-height: 1.5; }
+      ul { list-style: none; margin-top: 26px; }
+      li { display: flex; align-items: center; gap: 12px; font-size: 17px; color: #d4dbe2; margin: 14px 0; }
+      li .ck { width: 22px; height: 22px; border-radius: 6px; background: rgba(23,199,132,0.16); color: #17c784; display: grid; place-items: center; font-size: 13px; font-weight: 800; flex: 0 0 auto; }
+      .right { flex: 0 0 auto; position: relative; z-index: 2; }
+
+      /* popup mock — mirrors the real popup */
+      .pop { width: 360px; background: #0b0e13; border: 1px solid #232a33; border-radius: 16px; overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,0.55); }
+      .ph { display: flex; align-items: center; gap: 10px; padding: 15px 18px; border-bottom: 1px solid #232a33; }
+      .mark { width: 24px; height: 24px; border-radius: 7px; background: linear-gradient(135deg, #16324a, #0f2233); display: flex; align-items: flex-end; justify-content: center; gap: 2.5px; padding-bottom: 6px; }
+      .mark i { width: 3px; border-radius: 1px; background: #17c784; }
+      .mark i:nth-child(1) { height: 7px; opacity: .7; } .mark i:nth-child(2) { height: 10px; opacity: .85; } .mark i:nth-child(3) { height: 13px; }
+      .pt { font-weight: 650; font-size: 15px; }
+      .pv { margin-left: auto; font-size: 12px; color: #7d8895; }
+      .pb { padding: 16px 18px 8px; }
+      .lab { font-size: 11px; color: #7d8895; text-transform: uppercase; letter-spacing: .6px; }
+      .big { font-size: 28px; font-weight: 700; letter-spacing: -0.7px; margin-top: 4px; }
+      .pl { margin-top: 5px; font-size: 14px; font-weight: 600; color: #17c784; display: flex; gap: 8px; align-items: center; }
+      .pl .m { color: #7d8895; font-weight: 500; }
+      .bks { margin: 15px 0; border: 1px solid #232a33; border-radius: 11px; overflow: hidden; }
+      .row { display: flex; align-items: center; gap: 10px; padding: 10px 13px; background: #151a21; border-top: 1px solid #232a33; }
+      .row:first-child { border-top: 0; }
+      .row .bn { font-weight: 550; font-size: 13px; }
+      .row .cnt { color: #7d8895; font-size: 11px; }
+      .row .rr { margin-left: auto; text-align: right; }
+      .row .rv { font-size: 13px; font-variant-numeric: tabular-nums; }
+      .row .rp { font-size: 11px; font-weight: 600; color: #17c784; }
+      .cta { display: block; width: 100%; text-align: center; background: #1ea672; color: #fff; font-weight: 600; font-size: 14px; padding: 12px; border-radius: 10px; }
+      .hint { font-size: 11px; color: #7d8895; text-align: center; margin: 7px 4px 2px; }
+      .sec { font-size: 10.5px; color: #7d8895; text-transform: uppercase; letter-spacing: .6px; font-weight: 600; margin: 14px 2px 8px; padding-top: 12px; border-top: 1px solid #232a33; }
+      .jsonbtn { width: 100%; text-align: center; background: #1c222b; color: #cdd5dd; font-weight: 550; font-size: 12.5px; padding: 10px; border-radius: 9px; }
+      .exp { display: flex; gap: 7px; margin-top: 8px; }
+      .exp span { flex: 1; text-align: center; background: #1c222b; color: #cdd5dd; font-size: 11.5px; font-weight: 550; padding: 9px 5px; border-radius: 9px; }
+      .pf { display: flex; padding: 12px 18px; border-top: 1px solid #232a33; font-size: 10.5px; color: #7d8895; }
+
+      /* data card for slide 3 */
+      .card { width: 430px; background: #0d1218; border: 1px solid #232a33; border-radius: 14px; box-shadow: 0 30px 70px rgba(0,0,0,0.55); overflow: hidden; font: 13px/1.7 "SFMono-Regular", ui-monospace, Menlo, monospace; }
+      .card .bar { display: flex; gap: 7px; padding: 12px 15px; border-bottom: 1px solid #232a33; }
+      .card .bar b { width: 11px; height: 11px; border-radius: 50%; }
+      .card .code { padding: 16px 18px; color: #c9d3dc; white-space: pre; }
+      .code .k { color: #7ea2c9; } .code .s { color: #17c784; } .code .n { color: #e8c07d; } .code .neg { color: #f6465d; }
+      .badge { position: absolute; right: 90px; bottom: 70px; z-index: 3; display: inline-flex; align-items: center; gap: 9px; background: rgba(11,14,19,0.9); border: 1px solid #232a33; border-radius: 999px; padding: 10px 16px; font-size: 13px; font-weight: 600; color: #d4dbe2; }
+      .badge .lk { width: 8px; height: 8px; border-radius: 50%; background: #17c784; }
+          .slide { display: none; }
+      .slide:target { display: flex; }
+    </style>
+  </head>
+  <body>
+    <!-- SLIDE 1 -->
+    <section class="slide" id="s1">
+      <div class="left">
+        <div class="kicker"><span class="dot"></span>UNOFFICIAL TOOL FOR XTB</div>
+        <h1>Your whole XTB portfolio in&nbsp;<span class="accent">JSON / CSV</span></h1>
+        <div class="sub">Positions, P&amp;L, IKE, IKZE, investment plans and single buys — in one click, ready to analyse.</div>
+      </div>
+      <div class="right">
+        <div class="pop">
+          <div class="ph"><div class="mark"><i></i><i></i><i></i></div><div class="pt">Portfolio Export</div><div class="pv">v1.0</div></div>
+          <div class="pb">
+            <div class="lab">Portfolio value</div>
+            <div class="big">PLN 142,580.00</div>
+            <div class="pl"><span>▲ +PLN 11,240.00</span><span class="m">+8.55%</span></div>
+            <div class="bks">
+              <div class="row"><span class="bn">My Transactions</span><span class="cnt">1</span><span class="rr"><div class="rv">PLN 19,300.00</div><div class="rp">+8.90%</div></span></div>
+              <div class="row"><span class="bn">IKE</span><span class="cnt">8</span><span class="rr"><div class="rv">PLN 61,400.00</div><div class="rp">+13.20%</div></span></div>
+              <div class="row"><span class="bn">IKZE</span><span class="cnt">8</span><span class="rr"><div class="rv">PLN 34,380.00</div><div class="rp">+6.80%</div></span></div>
+              <div class="row"><span class="bn">Investment Plans</span><span class="cnt">8</span><span class="rr"><div class="rv">PLN 27,500.00</div><div class="rp">+4.10%</div></span></div>
+            </div>
+            <div class="cta">1. Capture my portfolio</div>
+            <div class="hint">Opens each account and reads your data (~15s).</div>
+            <div class="sec">2. Download a file</div>
+            <div class="jsonbtn">Full report · JSON</div>
+            <div class="exp"><span>Positions · CSV</span><span>Plans · CSV</span><span>History · CSV</span></div>
+          </div>
+          <div class="pf">Unofficial. Your data never leaves the browser.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 2 -->
+    <section class="slide" id="s2">
+      <div class="left">
+        <div class="kicker"><span class="dot"></span>FULLY AUTOMATIC</div>
+        <h1>One click.<br /><span class="accent">Every account.</span></h1>
+        <ul>
+          <li><span class="ck">✓</span> Auto-walks through IKE, IKZE, plans and single buys</li>
+          <li><span class="ck">✓</span> Single buys with the date &amp; price of every tranche</li>
+          <li><span class="ck">✓</span> Value, cash and profit / loss for every account</li>
+          <li><span class="ck">✓</span> Portfolio value over time — export as CSV</li>
+        </ul>
+      </div>
+      <div class="right">
+        <div class="pop">
+          <div class="ph"><div class="mark"><i></i><i></i><i></i></div><div class="pt">Portfolio Export</div><div class="pv">v1.0</div></div>
+          <div class="pb">
+            <div class="lab">Portfolio value</div>
+            <div class="big">PLN 142,580.00</div>
+            <div class="pl"><span>▲ +PLN 11,240.00</span><span class="m">+8.55%</span></div>
+            <div class="bks">
+              <div class="row"><span class="bn">My Transactions</span><span class="cnt">1</span><span class="rr"><div class="rv">PLN 19,300.00</div><div class="rp">+8.90%</div></span></div>
+              <div class="row"><span class="bn">IKE</span><span class="cnt">8</span><span class="rr"><div class="rv">PLN 61,400.00</div><div class="rp">+13.20%</div></span></div>
+              <div class="row"><span class="bn">IKZE</span><span class="cnt">8</span><span class="rr"><div class="rv">PLN 34,380.00</div><div class="rp">+6.80%</div></span></div>
+              <div class="row"><span class="bn">Investment Plans</span><span class="cnt">8</span><span class="rr"><div class="rv">PLN 27,500.00</div><div class="rp">+4.10%</div></span></div>
+            </div>
+            <div class="cta">1. Capture my portfolio</div>
+            <div class="hint">Opens each account and reads your data (~15s).</div>
+            <div class="sec">2. Download a file</div>
+            <div class="jsonbtn">Full report · JSON</div>
+            <div class="exp"><span>Positions · CSV</span><span>Plans · CSV</span><span>History · CSV</span></div>
+          </div>
+          <div class="pf">Unofficial. Your data never leaves the browser.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SLIDE 3 -->
+    <section class="slide" id="s3">
+      <div class="left">
+        <div class="kicker"><span class="dot"></span>PRIVACY FIRST</div>
+        <h1>Full detail.<br /><span class="accent">100% local.</span></h1>
+        <div class="sub">No servers, no separate login, no tokens in files. The export is built in your browser and stays on your disk.</div>
+      </div>
+      <div class="right">
+        <div class="card">
+          <div class="bar"><b style="background:#f6465d"></b><b style="background:#e8c07d"></b><b style="background:#17c784"></b></div>
+          <div class="code"><span class="k">"symbol"</span>: <span class="s">"VUAA.DE"</span>,
+<span class="k">"volume"</span>: <span class="n">74.7468</span>,
+<span class="k">"marketValue"</span>: <span class="n">40479.25</span>,
+<span class="k">"netPL"</span>: <span class="n">6145.75</span>,
+<span class="k">"plPct"</span>: <span class="n">17.9</span>,
+<span class="k">"lots"</span>: [
+  { <span class="k">"openTime"</span>: <span class="s">"2025-06-25"</span>,
+    <span class="k">"volume"</span>: <span class="n">11</span>, <span class="k">"netPL"</span>: <span class="n">1236.84</span> },
+  { <span class="k">"openTime"</span>: <span class="s">"2026-07-10"</span>,
+    <span class="k">"volume"</span>: <span class="n">2.75</span>, <span class="k">"netPL"</span>: <span class="neg">-46.16</span> }
+]</div>
+        </div>
+      </div>
+      <div class="badge"><span class="lk"></span>Zero network calls</div>
+    </section>
+  </body>
+</html>

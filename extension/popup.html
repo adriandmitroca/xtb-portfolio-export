@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0e13;
+        --surface: #151a21;
+        --surface-2: #1c222b;
+        --border: #232a33;
+        --text: #e8edf2;
+        --muted: #7d8895;
+        --brand: #e8352e;
+        --green: #17c784;
+        --red: #f6465d;
+        --accent: #1ea672;
+        --accent-hover: #25c085;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; }
+      body {
+        width: 340px;
+        font: 13px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        padding: 13px 16px;
+        border-bottom: 1px solid var(--border);
+      }
+      .mark {
+        width: 22px; height: 22px; border-radius: 6px; flex: 0 0 auto;
+        background: linear-gradient(135deg, #16324a, #0f2233);
+        display: flex; align-items: flex-end; justify-content: center; gap: 2px; padding-bottom: 5px;
+      }
+      .mark i { width: 2.5px; border-radius: 1px; background: var(--green); }
+      .mark i:nth-child(1) { height: 6px; opacity: 0.7; }
+      .mark i:nth-child(2) { height: 9px; opacity: 0.85; }
+      .mark i:nth-child(3) { height: 12px; }
+      .title { font-weight: 650; font-size: 14px; letter-spacing: -0.2px; }
+      .ver { margin-left: auto; font-size: 11px; color: var(--muted); }
+      main { padding: 14px 16px 8px; }
+
+      .hero { margin-bottom: 14px; }
+      .hero .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+      .hero .value { font-size: 26px; font-weight: 700; letter-spacing: -0.6px; margin-top: 3px; }
+      .hero .pl { margin-top: 3px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+      .pos { color: var(--green); }
+      .neg { color: var(--red); }
+      .pl .pct { color: var(--muted); font-weight: 500; }
+
+      .buckets { display: flex; flex-direction: column; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 14px; }
+      .brow { display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: var(--surface); }
+      .brow .bn { font-weight: 550; }
+      .brow .cnt { color: var(--muted); font-size: 11px; }
+      .brow .bv { margin-left: auto; text-align: right; }
+      .brow .bv .v { font-variant-numeric: tabular-nums; }
+      .brow .bv .p { font-size: 11px; font-weight: 600; }
+
+      .empty { color: var(--muted); text-align: center; padding: 10px 4px 16px; line-height: 1.5; }
+
+      button {
+        width: 100%; border: 0; border-radius: 9px; cursor: pointer;
+        font: 600 13px system-ui; padding: 11px 12px; color: #fff;
+        transition: background 0.12s ease, opacity 0.12s ease;
+      }
+      button:disabled { opacity: 0.55; cursor: default; }
+      .primary { background: var(--accent); }
+      .primary:hover:not(:disabled) { background: var(--accent-hover); }
+      .exports { display: flex; gap: 8px; margin-top: 8px; }
+      .ghost { background: var(--surface-2); color: var(--text); font-weight: 550; font-size: 12px; padding: 9px 8px; }
+      .ghost:hover:not(:disabled) { background: #232a33; }
+      .ghost.wide { width: 100%; margin-top: 0; }
+      .hint { font-size: 11px; color: var(--muted); text-align: center; margin: 7px 4px 2px; line-height: 1.35; }
+      .section { font-size: 10.5px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin: 16px 2px 8px; padding-top: 13px; border-top: 1px solid var(--border); }
+
+      footer { display: flex; align-items: center; gap: 8px; padding: 11px 16px; border-top: 1px solid var(--border); margin-top: 6px; }
+      footer .note { font-size: 10.5px; color: var(--muted); line-height: 1.35; }
+      .link { background: none; width: auto; padding: 0; color: var(--muted); font-size: 11px; font-weight: 500; margin-left: auto; text-decoration: underline; }
+      .link:hover { color: var(--text); }
+      a { color: #4c9ffb; text-decoration: none; }
+      .warn { background: rgba(246,70,93,0.12); border: 1px solid rgba(246,70,93,0.35); color: #f6465d; font-size: 11.5px; border-radius: 8px; padding: 8px 10px; margin-bottom: 12px; }
+
+      .spin { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: s 0.7s linear infinite; vertical-align: -2px; margin-right: 6px; }
+      @keyframes s { to { transform: rotate(360deg); } }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="mark"><i></i><i></i><i></i></div>
+      <div class="title" data-i18n="headerTitle">Portfolio Export</div>
+      <div class="ver" id="ver"></div>
+    </header>
+
+    <main>
+      <div id="warn" class="warn" hidden></div>
+      <div id="content"><div class="empty" data-i18n="loading">Loading…</div></div>
+
+      <button id="capture" class="primary" data-i18n="capture">Capture</button>
+      <div class="hint" data-i18n="captureHint"></div>
+
+      <div class="section" data-i18n="exportSection">Export</div>
+      <button id="json" class="ghost wide" data-i18n="exportJson" data-i18n-title="tipJson">JSON</button>
+      <div class="exports">
+        <button id="csvPos" class="ghost" data-i18n="exportPositions" data-i18n-title="tipPositions">Positions</button>
+        <button id="csvPlans" class="ghost" data-i18n="exportPlans" data-i18n-title="tipPlans">Plans</button>
+        <button id="csvHist" class="ghost" data-i18n="exportHistory" data-i18n-title="tipHistory">History</button>
+      </div>
+    </main>
+
+    <footer>
+      <div class="note" data-i18n="footerNote">Unofficial. Your data never leaves the browser.</div>
+      <button id="clear" class="link" data-i18n="clear" data-i18n-title="tipClear">Clear</button>
+    </footer>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
