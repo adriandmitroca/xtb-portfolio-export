@@ -149,9 +149,12 @@ _If the form makes you pick a data type because the extension reads financial
 holdings, select “Financial and payment information” and keep the three
 certifications — nothing is transmitted either way._
 
-### Privacy policy URL  ⚠️ required
-Host `PRIVACY.md` at a public URL (GitHub Pages, a public repo, or a Gist) and paste
-the link here. This is the only outstanding blocker.
+### Privacy policy URL
+The repo is public, so `PRIVACY.md` is already hosted. Paste:
+
+```
+https://github.com/adriandmitroca/xtb-portfolio-export/blob/main/PRIVACY.md
+```
 
 ---
 
