@@ -1,5 +1,5 @@
-// Generates the extension icons (no dependencies) — ascending green bars on a
-// dark background. Run: node scripts/generate-icons.js
+// Generates the extension icons (no dependencies) - a cream ledger page with a
+// folded corner and an export arrow. Run: node scripts/generate-icons.js
 const fs = require('fs');
 const path = require('path');
 const zlib = require('zlib');
@@ -36,69 +36,113 @@ function encodePNG(N, rgba) {
   ihdr.writeUInt32BE(N, 4);
   ihdr[8] = 8; // bit depth
   ihdr[9] = 6; // RGBA
-  // rows with filter byte 0
   const raw = Buffer.alloc(N * (N * 4 + 1));
   for (let y = 0; y < N; y++) {
-    raw[y * (N * 4 + 1)] = 0;
+    raw[y * (N * 4 + 1)] = 0; // filter: none
     rgba.copy(raw, y * (N * 4 + 1) + 1, y * N * 4, (y + 1) * N * 4);
   }
   const idat = zlib.deflateSync(raw, { level: 9 });
   return Buffer.concat([sig, chunk('IHDR', ihdr), chunk('IDAT', idat), chunk('IEND', Buffer.alloc(0))]);
 }
 
+const PAPER = [244, 241, 234];
+const FLAP = [219, 212, 196];
+const INK = [20, 18, 15];
+const OXBLOOD = [122, 46, 42];
+
+const PAD = 0.02;
+const FOLD = 0.28; // dog-ear size, as a fraction of the tile
+const RADIUS = 0.17;
+
+// Signed distance to a rounded rect; negative inside.
+function sdRoundRect(x, y, x0, y0, x1, y1, r) {
+  const cx = (x0 + x1) / 2;
+  const cy = (y0 + y1) / 2;
+  const bx = (x1 - x0) / 2 - r;
+  const by = (y1 - y0) / 2 - r;
+  const qx = Math.abs(x - cx) - bx;
+  const qy = Math.abs(y - cy) - by;
+  const outside = Math.hypot(Math.max(qx, 0), Math.max(qy, 0));
+  return outside + Math.min(Math.max(qx, qy), 0) - r;
+}
+
+function inRect(x, y, x0, y0, x1, y1) {
+  return x >= x0 && x <= x1 && y >= y0 && y <= y1;
+}
+
+// One sample of the mark in unit space. Returns [r,g,b] or null for transparent.
+// `detail` drops the ledger rules at sizes where they would turn to mush.
+function shade(x, y, detail) {
+  const lo = PAD;
+  const hi = 1 - PAD;
+  const span = hi - lo;
+
+  // Page outline = rounded rect intersected with the diagonal that cuts the
+  // top-right corner off. max() of two distances gives the intersection.
+  const dRect = sdRoundRect(x, y, lo, lo, hi, hi, RADIUS * span);
+  const foldLine = hi - FOLD * span;
+  const dFold = (x - y - foldLine + lo) / Math.SQRT2;
+  const dPage = Math.max(dRect, dFold);
+  if (dPage > 0) return null;
+
+  const stroke = Math.max(0.05, 1.1 / detail.N);
+  if (dPage > -stroke) return INK;
+
+  // Dog-ear: the triangle left of the cut inside the corner box, drawn as the
+  // folded-back flap. Its hairline is dropped at 16px, where it turns to mush.
+  const foldX = hi - FOLD * span;
+  const foldY = lo + FOLD * span;
+  if (x > foldX && y < foldY) {
+    if (detail.rules && dFold > -stroke * 1.4) return INK;
+    return FLAP;
+  }
+
+  // Export arrow, pointing down out of the page.
+  const a = detail.arrow;
+  if (inRect(x, y, 0.5 - a.shaft, a.top, 0.5 + a.shaft, a.head)) return OXBLOOD;
+  if (y >= a.head && y <= a.tip) {
+    const w = a.wing * (1 - (y - a.head) / (a.tip - a.head));
+    if (Math.abs(x - 0.5) <= w) return OXBLOOD;
+  }
+
+  // Ledger rules, standing in for the statement's text lines.
+  if (detail.rules) {
+    if (inRect(x, y, 0.16, 0.200, 0.58, 0.255)) return INK;
+    if (inRect(x, y, 0.16, 0.315, 0.46, 0.370)) return INK;
+  }
+
+  return PAPER;
+}
+
 function draw(N) {
   const buf = Buffer.alloc(N * N * 4);
-  const set = (x, y, r, g, b, a) => {
-    if (x < 0 || y < 0 || x >= N || y >= N) return;
-    const i = (y * N + x) * 4;
-    buf[i] = r; buf[i + 1] = g; buf[i + 2] = b; buf[i + 3] = a;
-  };
-  // Rounded-rect mask with a subtle vertical background gradient.
-  const radius = N * 0.22;
-  const inCorner = (x, y) => {
-    const cx = x < radius ? radius : x > N - radius ? N - radius : x;
-    const cy = y < radius ? radius : y > N - radius ? N - radius : y;
-    const dx = x + 0.5 - cx;
-    const dy = y + 0.5 - cy;
-    return dx * dx + dy * dy <= radius * radius;
+  const SS = 6; // supersampling factor, for smooth edges without a raster lib
+  const rules = N >= 32;
+  const detail = {
+    N,
+    rules,
+    arrow: rules
+      ? { shaft: 0.072, top: 0.42, head: 0.585, wing: 0.215, tip: 0.85 }
+      : { shaft: 0.100, top: 0.30, head: 0.550, wing: 0.240, tip: 0.82 },
   };
   for (let y = 0; y < N; y++) {
-    const t = y / (N - 1);
-    const bg = [Math.round(18 - 6 * t), Math.round(23 - 7 * t), Math.round(30 - 9 * t)];
     for (let x = 0; x < N; x++) {
-      if (inCorner(x, y)) set(x, y, bg[0], bg[1], bg[2], 255);
+      let r = 0, g = 0, b = 0, a = 0;
+      for (let sy = 0; sy < SS; sy++) {
+        for (let sx = 0; sx < SS; sx++) {
+          const c = shade((x + (sx + 0.5) / SS) / N, (y + (sy + 0.5) / SS) / N, detail);
+          if (!c) continue;
+          r += c[0]; g += c[1]; b += c[2]; a += 1;
+        }
+      }
+      const i = (y * N + x) * 4;
+      if (!a) continue;
+      buf[i] = Math.round(r / a);
+      buf[i + 1] = Math.round(g / a);
+      buf[i + 2] = Math.round(b / a);
+      buf[i + 3] = Math.round((a / (SS * SS)) * 255);
     }
   }
-  // Ascending bars.
-  const pad = Math.max(2, Math.round(N * 0.24));
-  const base = N - pad;
-  const inner = N - 2 * pad;
-  const bw = Math.max(1, Math.round((inner / 3) * 0.62));
-  const gap = Math.max(1, Math.round((inner - 3 * bw) / 2));
-  const heights = [0.42, 0.68, 1.0];
-  const colors = [[26, 122, 88], [24, 160, 110], [23, 199, 132]];
-  const barR = Math.max(1, Math.round(bw * 0.3)); // rounded bar tops
-  const drawBar = (x0, h, c) => {
-    const top = base - h;
-    for (let y = top; y < base; y++) {
-      for (let x = x0; x < x0 + bw; x++) {
-        // round only the two top corners
-        if (y < top + barR && (x < x0 + barR || x > x0 + bw - barR)) {
-          const cx = x < x0 + barR ? x0 + barR : x0 + bw - barR;
-          const cy = top + barR;
-          const dx = x + 0.5 - cx;
-          const dy = y + 0.5 - cy;
-          if (dx * dx + dy * dy > barR * barR) continue;
-        }
-        if (inCorner(x, y)) set(x, y, c[0], c[1], c[2], 255);
-      }
-    }
-  };
-  for (let b = 0; b < 3; b++) drawBar(pad + b * (bw + gap), Math.max(1, Math.round(inner * heights[b])), colors[b]);
-  // Brand-red baseline accent under the bars.
-  const by = base + Math.max(1, Math.round(N * 0.03));
-  const bh = Math.max(1, Math.round(N * 0.035));
-  for (let y = by; y < by + bh; y++) for (let x = pad; x < N - pad; x++) if (inCorner(x, y)) set(x, y, 232, 53, 46, 255);
   return buf;
 }
 
@@ -108,3 +152,6 @@ for (const N of [16, 48, 128]) {
   fs.writeFileSync(path.join(outDir, `icon${N}.png`), encodePNG(N, draw(N)));
   console.log('wrote icons/icon' + N + '.png');
 }
+const storeIcon = path.join(__dirname, '..', 'store-assets', 'store-icon-128.png');
+fs.copyFileSync(path.join(outDir, 'icon128.png'), storeIcon);
+console.log('wrote store-assets/store-icon-128.png');

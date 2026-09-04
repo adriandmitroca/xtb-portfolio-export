@@ -3,41 +3,43 @@
   <head>
     <meta charset="utf-8" />
     <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body { background: #0b0e13; }
-      .tile {
-        width: 100vw; height: 100vh; position: relative; overflow: hidden;
-        display: flex; align-items: center; gap: 22px; padding: 0 40px;
-        background: radial-gradient(420px 280px at 82% 12%, #17222f 0%, #0b0e13 62%);
-        font: 15px system-ui, -apple-system, sans-serif; color: #e8edf2;
+      :root {
+        --paper: #f4f1ea; --rule: #d6cfc0; --rule-soft: #e6dfd0;
+        --ink: #14120f; --muted: #6b6559; --oxblood: #7a2e2a;
+        --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif;
+        --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, "Cascadia Mono", Consolas, monospace;
       }
-      .icon { width: 88px; height: 88px; border-radius: 22px; flex: 0 0 auto;
-        background: linear-gradient(160deg, #141a22, #0c141c);
-        display: flex; align-items: flex-end; justify-content: center; gap: 7px; padding-bottom: 22px;
-        box-shadow: 0 12px 30px rgba(0,0,0,.5); }
-      .icon i { width: 10px; border-radius: 3px 3px 0 0; }
-      .icon i:nth-child(1) { height: 22px; background: #1a7a58; }
-      .icon i:nth-child(2) { height: 34px; background: #18a06e; }
-      .icon i:nth-child(3) { height: 48px; background: #17c784; }
-      .icon::after { content: ""; position: absolute; }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { background: var(--paper); }
+      body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+      .tile {
+        width: 440px; height: 280px; flex: 0 0 auto; position: relative; overflow: hidden;
+        display: flex; align-items: center; gap: 22px; padding: 0 34px 0 46px;
+        background:
+          repeating-linear-gradient(to bottom, transparent 0 29px, var(--rule-soft) 29px 30px),
+          var(--paper);
+        font: 15px var(--serif); color: var(--ink); -webkit-font-smoothing: antialiased;
+      }
+      .tile::before { content: ""; position: absolute; left: 30px; top: 0; bottom: 0; width: 1px; background: rgba(122, 46, 42, 0.38); }
+      .icon { width: 76px; height: 76px; flex: 0 0 auto; display: block; }
       .txt { position: relative; z-index: 2; }
-      .name { font-size: 27px; font-weight: 750; letter-spacing: -0.6px; line-height: 1.1; }
-      .name .x { color: #17c784; }
-      .sub { font-size: 13px; color: #8b95a1; margin-top: 4px; font-weight: 500; }
-      .tag { font-size: 15px; color: #d4dbe2; margin-top: 14px; font-weight: 600; }
-      .tag .arrow { color: #17c784; }
-      .badge { position: absolute; right: 26px; bottom: 22px; font-size: 11px; color: #6b7580; }
+      .name { font: 400 27px/1.14 var(--serif); letter-spacing: -0.2px; }
+      .name .x { font-style: italic; color: var(--oxblood); }
+      .sub { font: italic 13px var(--serif); color: var(--muted); margin-top: 3px; }
+      .tag { font: 600 10.5px var(--mono); color: var(--ink); text-transform: uppercase; letter-spacing: 1.1px; margin-top: 15px; padding-top: 11px; border-top: 1px solid var(--ink); display: inline-block; }
+      .tag .arrow { color: var(--oxblood); }
+      .badge { position: absolute; left: 46px; right: 22px; bottom: 18px; text-align: right; font: italic 10.5px var(--serif); color: var(--muted); }
     </style>
   </head>
   <body>
     <div class="tile">
-      <div class="icon"><i></i><i></i><i></i></div>
+      <img class="icon" src="store-icon-128.png" alt="" />
       <div class="txt">
         <div class="name">Portfolio Export<br />for <span class="x">XTB</span></div>
         <div class="sub">unofficial</div>
-        <div class="tag">Your whole portfolio <span class="arrow">→</span> JSON / CSV</div>
+        <div class="tag">Whole portfolio <span class="arrow">&rarr;</span> JSON / CSV</div>
       </div>
-      <div class="badge">Runs locally · no data leaves your browser</div>
+      <div class="badge">Runs locally &middot; no data leaves your browser</div>
     </div>
   </body>
 </html>

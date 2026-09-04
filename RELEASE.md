@@ -67,9 +67,10 @@ Searchable listing. Most review scrutiny.
         to the single purpose. Not used for creditworthiness/lending.
       - Because nothing leaves the device, these are all easy to answer honestly.
 - [ ] **Assets** — 128×128 icon (`extension/icons/icon128.png`) and three ready
-      1280×800 screenshots in `store-assets/screenshot-{1,2,3}.png` (regenerate by
-      opening `store-assets/screenshots.html` and re-capturing). Optionally a
-      440×280 small promo tile.
+      1280×800 screenshots in `store-assets/screenshot-{1,2,3}.png`. Optionally a
+      440×280 small promo tile. Regenerate every asset from its HTML template
+      with `scripts/render-assets.sh`; regenerate the icons with
+      `node scripts/generate-icons.js`.
 - [ ] **Review note (optional but wise)** — proactively explain that the
       extension reads only the account-number claim from the session token, in
       memory, and transmits nothing. This preempts questions about token access.

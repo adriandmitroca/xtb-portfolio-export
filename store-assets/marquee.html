@@ -3,64 +3,69 @@
   <head>
     <meta charset="utf-8" />
     <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body { background: #0b0e13; }
-      .wrap {
-        width: 100vw; height: 100vh; overflow: hidden; position: relative;
-        display: flex; align-items: center; gap: 60px; padding: 0 80px;
-        background: radial-gradient(900px 620px at 80% 14%, #17222f 0%, #0b0e13 62%);
-        font: 15px -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; color: #e8edf2;
+      :root {
+        --paper: #f4f1ea; --card: #fbf9f5; --rule: #d6cfc0; --rule-soft: #e6dfd0;
+        --ink: #14120f; --muted: #6b6559; --oxblood: #7a2e2a; --green: #2f6b4f;
+        --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif;
+        --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, "Cascadia Mono", Consolas, monospace;
       }
-      .wrap::after { content: ""; position: absolute; left: -120px; bottom: -180px; width: 520px; height: 520px;
-        background: radial-gradient(circle, rgba(23,199,132,0.12), transparent 62%); }
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      html, body { background: var(--paper); }
+      body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+      .wrap {
+        width: 1400px; height: 560px; flex: 0 0 auto; overflow: hidden; position: relative;
+        display: flex; align-items: center; gap: 64px; padding: 0 90px;
+        background:
+          repeating-linear-gradient(to bottom, transparent 0 33px, var(--rule-soft) 33px 34px),
+          var(--paper);
+        font: 15px var(--serif); color: var(--ink); -webkit-font-smoothing: antialiased;
+      }
+      .wrap::before { content: ""; position: absolute; left: 58px; top: 0; bottom: 0; width: 1px; background: rgba(122, 46, 42, 0.38); }
+      .run { position: absolute; left: 90px; right: 90px; display: flex; font: 500 10.5px var(--mono); color: var(--muted); letter-spacing: 1.4px; text-transform: uppercase; }
+      .run.top { top: 40px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+      .run.bot { bottom: 40px; padding-top: 10px; border-top: 1px solid var(--rule); }
+      .run .r { margin-left: auto; }
+
       .left { flex: 1; position: relative; z-index: 2; }
-      .brand { display: flex; align-items: center; gap: 16px; margin-bottom: 26px; }
-      .icon { width: 60px; height: 60px; border-radius: 15px; flex: 0 0 auto;
-        background: linear-gradient(160deg, #141a22, #0c141c);
-        display: flex; align-items: flex-end; justify-content: center; gap: 5px; padding-bottom: 15px;
-        box-shadow: 0 10px 26px rgba(0,0,0,.5); }
-      .icon i { width: 7px; border-radius: 2px 2px 0 0; }
-      .icon i:nth-child(1) { height: 15px; background: #1a7a58; }
-      .icon i:nth-child(2) { height: 23px; background: #18a06e; }
-      .icon i:nth-child(3) { height: 33px; background: #17c784; }
-      .brand .bt { font-size: 21px; font-weight: 700; letter-spacing: -0.4px; }
-      .brand .bs { font-size: 12px; color: #7d8895; margin-top: 2px; }
-      h1 { font-size: 46px; line-height: 1.1; font-weight: 750; letter-spacing: -1.3px; }
-      h1 .accent { color: #17c784; }
-      .sub { font-size: 18px; color: #aab4bf; margin-top: 18px; max-width: 500px; line-height: 1.5; }
-      .chips { display: flex; gap: 10px; margin-top: 26px; }
-      .chip { font-size: 12.5px; color: #cdd5dd; background: rgba(255,255,255,0.04); border: 1px solid #232a33; border-radius: 999px; padding: 7px 14px; }
+      .brand { display: flex; align-items: center; gap: 15px; margin-bottom: 28px; }
+      .icon { width: 56px; height: 56px; flex: 0 0 auto; display: block; }
+      .brand .bt { font: 400 21px var(--serif); }
+      .brand .bs { font: italic 12px var(--serif); color: var(--muted); margin-top: 2px; }
+      h1 { font: 400 47px/1.12 var(--serif); letter-spacing: -0.5px; }
+      h1 .accent { color: var(--oxblood); font-style: italic; }
+      .sub { font-size: 18px; color: var(--muted); margin-top: 18px; max-width: 500px; line-height: 1.55; }
+      .chips { display: flex; gap: 26px; margin-top: 28px; padding-top: 13px; border-top: 1px solid var(--ink); }
+      .chip { font: 600 10.5px var(--mono); color: var(--ink); text-transform: uppercase; letter-spacing: 1px; }
 
       .right { flex: 0 0 auto; position: relative; z-index: 2; }
-      .pop { width: 350px; background: #0b0e13; border: 1px solid #232a33; border-radius: 16px; overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,0.55); }
-      .ph { display: flex; align-items: center; gap: 10px; padding: 14px 18px; border-bottom: 1px solid #232a33; }
-      .mk { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(135deg, #16324a, #0f2233); display: flex; align-items: flex-end; justify-content: center; gap: 2.5px; padding-bottom: 5px; }
-      .mk i { width: 3px; border-radius: 1px; background: #17c784; }
-      .mk i:nth-child(1) { height: 6px; opacity:.7; } .mk i:nth-child(2) { height: 9px; opacity:.85; } .mk i:nth-child(3) { height: 12px; }
-      .pt { font-weight: 650; font-size: 14px; }
-      .pv { margin-left: auto; font-size: 11px; color: #7d8895; }
-      .pb { padding: 15px 18px 16px; }
-      .lab { font-size: 10.5px; color: #7d8895; text-transform: uppercase; letter-spacing: .6px; }
-      .big { font-size: 26px; font-weight: 700; letter-spacing: -0.6px; margin-top: 3px; }
-      .pl { margin-top: 4px; font-size: 13px; font-weight: 600; color: #17c784; }
-      .pl .m { color: #7d8895; font-weight: 500; margin-left: 6px; }
-      .bks { margin: 14px 0 0; border: 1px solid #232a33; border-radius: 11px; overflow: hidden; }
-      .row { display: flex; align-items: center; padding: 9px 13px; background: #151a21; border-top: 1px solid #232a33; }
+      .pop { width: 350px; background: var(--card); border: 1px solid var(--ink); border-radius: 4px; overflow: hidden; box-shadow: 0 22px 46px rgba(20, 18, 15, 0.20); transform: rotate(-0.75deg); }
+      .ph { display: flex; align-items: center; gap: 10px; padding: 13px 18px 11px; border-bottom: 3px double var(--ink); }
+      .mk { width: 21px; height: 21px; display: block; }
+      .pt { font: 600 15px var(--serif); }
+      .pv { margin-left: auto; font: 500 10.5px var(--mono); color: var(--muted); }
+      .pb { padding: 16px 18px 18px; }
+      .lab { font: 600 10px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 1.1px; }
+      .big { font: 500 27px/1.1 var(--mono); letter-spacing: -1px; margin-top: 5px; font-variant-numeric: tabular-nums; }
+      .pl { margin-top: 5px; font: 600 12.5px var(--mono); color: var(--green); font-variant-numeric: tabular-nums; }
+      .pl .m { color: var(--muted); font-weight: 400; margin-left: 8px; }
+      .bks { margin: 15px 0 0; border-top: 1px solid var(--ink); border-bottom: 3px double var(--ink); }
+      .row { display: flex; align-items: baseline; padding: 8px 2px; border-top: 1px solid var(--rule-soft); }
       .row:first-child { border-top: 0; }
-      .row .bn { font-weight: 550; font-size: 12.5px; }
-      .row .rv { margin-left: auto; font-size: 12.5px; }
-      .row .rp { font-size: 10.5px; font-weight: 600; color: #17c784; margin-left: 10px; width: 46px; text-align: right; }
+      .row .bn { font-size: 13.5px; }
+      .row .rv { margin-left: auto; font: 12px var(--mono); font-variant-numeric: tabular-nums; }
+      .row .rp { font: 600 10px var(--mono); color: var(--green); margin-left: 12px; width: 48px; text-align: right; font-variant-numeric: tabular-nums; }
     </style>
   </head>
   <body>
     <div class="wrap">
+      <div class="run top"><span>Chrome extension &middot; unofficial</span><span class="r">xstation5.xtb.com</span></div>
       <div class="left">
         <div class="brand">
-          <div class="icon"><i></i><i></i><i></i></div>
-          <div><div class="bt">Portfolio Export for XTB</div><div class="bs">unofficial · runs 100% locally</div></div>
+          <img class="icon" src="store-icon-128.png" alt="" />
+          <div><div class="bt">Portfolio Export for XTB</div><div class="bs">unofficial &middot; runs 100% locally</div></div>
         </div>
         <h1>Your whole portfolio,<br /><span class="accent">exported to JSON / CSV.</span></h1>
-        <div class="sub">Positions, P&amp;L, IKE, IKZE, plans and history — captured in one click, ready for your own analysis.</div>
+        <div class="sub">Positions, P&amp;L, IKE, IKZE, plans and history &mdash; captured in one click, ready for your own analysis.</div>
         <div class="chips">
           <span class="chip">One-click capture</span>
           <span class="chip">Purchase lots &amp; dates</span>
@@ -69,11 +74,11 @@
       </div>
       <div class="right">
         <div class="pop">
-          <div class="ph"><div class="mk"><i></i><i></i><i></i></div><div class="pt">Portfolio Export</div><div class="pv">v1.0</div></div>
+          <div class="ph"><img class="mk" src="store-icon-128.png" alt="" /><div class="pt">Portfolio Export</div><div class="pv">v1.0</div></div>
           <div class="pb">
             <div class="lab">Portfolio value</div>
             <div class="big">PLN 142,580.00</div>
-            <div class="pl">▲ +PLN 11,240.00<span class="m">+8.55%</span></div>
+            <div class="pl">&#9650; +PLN 11,240.00<span class="m">+8.55%</span></div>
             <div class="bks">
               <div class="row"><span class="bn">My Transactions</span><span class="rv">PLN 19,300.00</span><span class="rp">+8.90%</span></div>
               <div class="row"><span class="bn">IKE</span><span class="rv">PLN 61,400.00</span><span class="rp">+13.20%</span></div>
@@ -83,6 +88,7 @@
           </div>
         </div>
       </div>
+      <div class="run bot"><span>IKE &middot; IKZE &middot; Investment Plans &middot; My Transactions</span><span class="r">JSON &middot; CSV</span></div>
     </div>
   </body>
 </html>

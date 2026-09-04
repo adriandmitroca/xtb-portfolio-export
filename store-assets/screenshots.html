@@ -3,85 +3,119 @@
   <head>
     <meta charset="utf-8" />
     <style>
+      :root {
+        --paper: #f4f1ea;
+        --card: #fbf9f5;
+        --rule: #d6cfc0;
+        --rule-soft: #e6dfd0;
+        --ink: #14120f;
+        --muted: #6b6559;
+        --oxblood: #7a2e2a;
+        --green: #2f6b4f;
+        --red: #a03a2f;
+        --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif;
+        --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, "Cascadia Mono", Consolas, monospace;
+      }
       * { box-sizing: border-box; margin: 0; padding: 0; }
-      html, body { background: #0b0e13; }
-      body { font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; color: #e8edf2; }
+      html, body { background: var(--paper); }
+      body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+      body { font: 15px/1.5 var(--serif); color: var(--ink); -webkit-font-smoothing: antialiased; }
+
       .slide {
-        width: 100vw; height: 100vh; position: relative; overflow: hidden;
-        display: flex; align-items: center; gap: 64px; padding: 0 90px;
-        background: radial-gradient(1100px 700px at 78% 18%, #17222f 0%, #0b0e13 60%);
+        width: 1280px; height: 800px; flex: 0 0 auto; position: relative; overflow: hidden;
+        display: flex; align-items: center; gap: 72px; padding: 0 100px;
+        /* ruled ledger paper */
+        background:
+          repeating-linear-gradient(to bottom, transparent 0 33px, var(--rule-soft) 33px 34px),
+          var(--paper);
       }
-      .slide::after {
-        content: ""; position: absolute; left: -140px; bottom: -160px; width: 520px; height: 520px;
-        background: radial-gradient(circle, rgba(23,199,132,0.12), transparent 62%);
-      }
+      /* the red margin rule down the left edge of a ledger sheet */
+      .slide::before { content: ""; position: absolute; left: 64px; top: 0; bottom: 0; width: 1px; background: rgba(122, 46, 42, 0.38); }
+
+      /* One slide per render: the hash picks it, so the document is exactly
+         one viewport tall and headless Chrome cannot mis-scroll. */
+      .slide { display: none; }
+      .slide:target { display: flex; }
+      body:not(:has(.slide:target)) #s1 { display: flex; }
+      .run { position: absolute; left: 100px; right: 100px; display: flex; font: 500 10.5px var(--mono); color: var(--muted); letter-spacing: 1.4px; text-transform: uppercase; }
+      .run.top { top: 44px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+      .run.bot { bottom: 44px; padding-top: 10px; border-top: 1px solid var(--rule); }
+      .run .r { margin-left: auto; }
+
       .left { flex: 1; position: relative; z-index: 2; }
-      .kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #17c784; letter-spacing: 0.4px; margin-bottom: 20px; }
-      .kicker .dot { width: 7px; height: 7px; border-radius: 50%; background: #17c784; }
-      h1 { font-size: 52px; line-height: 1.08; font-weight: 750; letter-spacing: -1.4px; margin-bottom: 20px; }
-      h1 .accent { color: #17c784; }
-      .sub { font-size: 19px; color: #aab4bf; max-width: 480px; line-height: 1.5; }
-      ul { list-style: none; margin-top: 26px; }
-      li { display: flex; align-items: center; gap: 12px; font-size: 17px; color: #d4dbe2; margin: 14px 0; }
-      li .ck { width: 22px; height: 22px; border-radius: 6px; background: rgba(23,199,132,0.16); color: #17c784; display: grid; place-items: center; font-size: 13px; font-weight: 800; flex: 0 0 auto; }
+      .kicker { display: flex; align-items: center; gap: 12px; font: 600 11px var(--mono); color: var(--oxblood); letter-spacing: 1.7px; text-transform: uppercase; margin-bottom: 24px; }
+      .kicker::before { content: ""; width: 28px; height: 2px; background: var(--oxblood); }
+      h1 { font: 400 58px/1.08 var(--serif); letter-spacing: -0.6px; margin-bottom: 22px; }
+      h1 .accent { color: var(--oxblood); font-style: italic; }
+      .sub { font-size: 19px; color: var(--muted); max-width: 470px; line-height: 1.55; }
+
+      ul { list-style: none; margin-top: 30px; max-width: 520px; border-top: 1px solid var(--ink); border-bottom: 3px double var(--ink); }
+      li { display: flex; align-items: baseline; gap: 16px; font-size: 16.5px; padding: 13px 2px; border-top: 1px solid var(--rule-soft); }
+      li:first-child { border-top: 0; }
+      li .no { font: 500 11px var(--mono); color: var(--oxblood); letter-spacing: 0.5px; flex: 0 0 auto; }
+
       .right { flex: 0 0 auto; position: relative; z-index: 2; }
 
-      /* popup mock — mirrors the real popup */
-      .pop { width: 360px; background: #0b0e13; border: 1px solid #232a33; border-radius: 16px; overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,0.55); }
-      .ph { display: flex; align-items: center; gap: 10px; padding: 15px 18px; border-bottom: 1px solid #232a33; }
-      .mark { width: 24px; height: 24px; border-radius: 7px; background: linear-gradient(135deg, #16324a, #0f2233); display: flex; align-items: flex-end; justify-content: center; gap: 2.5px; padding-bottom: 6px; }
-      .mark i { width: 3px; border-radius: 1px; background: #17c784; }
-      .mark i:nth-child(1) { height: 7px; opacity: .7; } .mark i:nth-child(2) { height: 10px; opacity: .85; } .mark i:nth-child(3) { height: 13px; }
-      .pt { font-weight: 650; font-size: 15px; }
-      .pv { margin-left: auto; font-size: 12px; color: #7d8895; }
-      .pb { padding: 16px 18px 8px; }
-      .lab { font-size: 11px; color: #7d8895; text-transform: uppercase; letter-spacing: .6px; }
-      .big { font-size: 28px; font-weight: 700; letter-spacing: -0.7px; margin-top: 4px; }
-      .pl { margin-top: 5px; font-size: 14px; font-weight: 600; color: #17c784; display: flex; gap: 8px; align-items: center; }
-      .pl .m { color: #7d8895; font-weight: 500; }
-      .bks { margin: 15px 0; border: 1px solid #232a33; border-radius: 11px; overflow: hidden; }
-      .row { display: flex; align-items: center; gap: 10px; padding: 10px 13px; background: #151a21; border-top: 1px solid #232a33; }
+      /* popup insert - mirrors the real popup, laid on the page like a slip */
+      .pop {
+        width: 360px; background: var(--card); border: 1px solid var(--ink); border-radius: 4px; overflow: hidden;
+        box-shadow: 0 22px 46px rgba(20, 18, 15, 0.20); transform: rotate(-0.75deg) scale(0.94); transform-origin: center;
+      }
+      .ph { display: flex; align-items: center; gap: 10px; padding: 14px 18px 12px; border-bottom: 3px double var(--ink); }
+      .mark { width: 22px; height: 22px; display: block; }
+      .pt { font: 600 16px var(--serif); }
+      .pv { margin-left: auto; font: 500 11px var(--mono); color: var(--muted); }
+      .pb { padding: 17px 18px 10px; }
+      .lab, .sec { font: 600 10px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: 1.1px; }
+      .big { font: 500 29px/1.1 var(--mono); letter-spacing: -1px; margin-top: 6px; font-variant-numeric: tabular-nums; }
+      .pl { margin-top: 6px; font: 600 13px var(--mono); color: var(--green); display: flex; gap: 9px; align-items: baseline; font-variant-numeric: tabular-nums; }
+      .pl .m { color: var(--muted); font-weight: 400; }
+      .bks { margin: 16px 0 18px; border-top: 1px solid var(--ink); border-bottom: 3px double var(--ink); }
+      .row { display: flex; align-items: baseline; gap: 9px; padding: 9px 2px; border-top: 1px solid var(--rule-soft); }
       .row:first-child { border-top: 0; }
-      .row .bn { font-weight: 550; font-size: 13px; }
-      .row .cnt { color: #7d8895; font-size: 11px; }
-      .row .rr { margin-left: auto; text-align: right; }
-      .row .rv { font-size: 13px; font-variant-numeric: tabular-nums; }
-      .row .rp { font-size: 11px; font-weight: 600; color: #17c784; }
-      .cta { display: block; width: 100%; text-align: center; background: #1ea672; color: #fff; font-weight: 600; font-size: 14px; padding: 12px; border-radius: 10px; }
-      .hint { font-size: 11px; color: #7d8895; text-align: center; margin: 7px 4px 2px; }
-      .sec { font-size: 10.5px; color: #7d8895; text-transform: uppercase; letter-spacing: .6px; font-weight: 600; margin: 14px 2px 8px; padding-top: 12px; border-top: 1px solid #232a33; }
-      .jsonbtn { width: 100%; text-align: center; background: #1c222b; color: #cdd5dd; font-weight: 550; font-size: 12.5px; padding: 10px; border-radius: 9px; }
-      .exp { display: flex; gap: 7px; margin-top: 8px; }
-      .exp span { flex: 1; text-align: center; background: #1c222b; color: #cdd5dd; font-size: 11.5px; font-weight: 550; padding: 9px 5px; border-radius: 9px; }
-      .pf { display: flex; padding: 12px 18px; border-top: 1px solid #232a33; font-size: 10.5px; color: #7d8895; }
+      .row .bn { font-size: 14px; }
+      .row .cnt { font: 400 10px var(--mono); color: var(--muted); }
+      .row .rr { margin-left: auto; text-align: right; font-family: var(--mono); }
+      .row .rv { font-size: 12.5px; font-variant-numeric: tabular-nums; }
+      .row .rp { font-size: 10px; font-weight: 600; color: var(--green); font-variant-numeric: tabular-nums; }
+      .cta { display: block; width: 100%; text-align: center; background: var(--ink); color: var(--paper); font: 600 13.5px var(--serif); letter-spacing: 0.2px; padding: 12px; border-radius: 3px; }
+      .hint { font: italic 11.5px var(--serif); color: var(--muted); text-align: center; margin: 9px 4px 2px; }
+      .sec { margin: 17px 2px 9px; padding-top: 13px; border-top: 1px solid var(--rule); }
+      .jsonbtn { width: 100%; text-align: center; background: var(--paper); border: 1px solid var(--rule); color: var(--ink); font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: 0.8px; padding: 10px; border-radius: 3px; }
+      .exp { display: flex; gap: 7px; margin-top: 7px; }
+      .exp span { flex: 1; text-align: center; background: var(--paper); border: 1px solid var(--rule); color: var(--ink); font: 600 10px var(--mono); text-transform: uppercase; letter-spacing: 0.6px; padding: 10px 4px; border-radius: 3px; }
+      .pf { display: flex; padding: 12px 18px; border-top: 3px double var(--ink); font: italic 10.5px var(--serif); color: var(--muted); }
 
-      /* data card for slide 3 */
-      .card { width: 430px; background: #0d1218; border: 1px solid #232a33; border-radius: 14px; box-shadow: 0 30px 70px rgba(0,0,0,0.55); overflow: hidden; font: 13px/1.7 "SFMono-Regular", ui-monospace, Menlo, monospace; }
-      .card .bar { display: flex; gap: 7px; padding: 12px 15px; border-bottom: 1px solid #232a33; }
-      .card .bar b { width: 11px; height: 11px; border-radius: 50%; }
-      .card .code { padding: 16px 18px; color: #c9d3dc; white-space: pre; }
-      .code .k { color: #7ea2c9; } .code .s { color: #17c784; } .code .n { color: #e8c07d; } .code .neg { color: #f6465d; }
-      .badge { position: absolute; right: 90px; bottom: 70px; z-index: 3; display: inline-flex; align-items: center; gap: 9px; background: rgba(11,14,19,0.9); border: 1px solid #232a33; border-radius: 999px; padding: 10px 16px; font-size: 13px; font-weight: 600; color: #d4dbe2; }
-      .badge .lk { width: 8px; height: 8px; border-radius: 50%; background: #17c784; }
-          .slide { display: none; }
-      .slide:target { display: flex; }
+      /* export printout for slide 3 */
+      .card {
+        width: 440px; background: var(--card); border: 1px solid var(--ink); border-radius: 4px; overflow: hidden;
+        box-shadow: 0 22px 46px rgba(20, 18, 15, 0.20); transform: rotate(0.6deg);
+      }
+      .card .file { display: flex; align-items: baseline; gap: 10px; padding: 13px 18px 11px; border-bottom: 1px solid var(--ink); font: 500 11px var(--mono); color: var(--muted); letter-spacing: 0.3px; }
+      .card .file .sz { margin-left: auto; }
+      .code { padding: 18px; font: 13px/1.75 var(--mono); color: var(--ink); white-space: pre; font-variant-numeric: tabular-nums; }
+      .code .k { color: var(--muted); }
+      .code .s { color: var(--oxblood); }
+      .code .n { font-weight: 600; }
+      .code .neg { color: var(--red); font-weight: 600; }
     </style>
   </head>
   <body>
     <!-- SLIDE 1 -->
     <section class="slide" id="s1">
+      <div class="run top"><span>Portfolio Export for XTB &middot; unofficial</span><span class="r">01 / 03</span></div>
       <div class="left">
-        <div class="kicker"><span class="dot"></span>UNOFFICIAL TOOL FOR XTB</div>
-        <h1>Your whole XTB portfolio in&nbsp;<span class="accent">JSON / CSV</span></h1>
-        <div class="sub">Positions, P&amp;L, IKE, IKZE, investment plans and single buys — in one click, ready to analyse.</div>
+        <div class="kicker">Unofficial tool for XTB</div>
+        <h1>Your whole XTB portfolio<br />in <span class="accent">JSON / CSV</span></h1>
+        <div class="sub">Positions, P&amp;L, IKE, IKZE, investment plans and single buys &mdash; in one click, ready to analyse.</div>
       </div>
       <div class="right">
         <div class="pop">
-          <div class="ph"><div class="mark"><i></i><i></i><i></i></div><div class="pt">Portfolio Export</div><div class="pv">v1.0</div></div>
+          <div class="ph"><img class="mark" src="store-icon-128.png" alt="" /><div class="pt">Portfolio Export</div><div class="pv">v1.0</div></div>
           <div class="pb">
             <div class="lab">Portfolio value</div>
             <div class="big">PLN 142,580.00</div>
-            <div class="pl"><span>▲ +PLN 11,240.00</span><span class="m">+8.55%</span></div>
+            <div class="pl"><span>&#9650; +PLN 11,240.00</span><span class="m">+8.55%</span></div>
             <div class="bks">
               <div class="row"><span class="bn">My Transactions</span><span class="cnt">1</span><span class="rr"><div class="rv">PLN 19,300.00</div><div class="rp">+8.90%</div></span></div>
               <div class="row"><span class="bn">IKE</span><span class="cnt">8</span><span class="rr"><div class="rv">PLN 61,400.00</div><div class="rp">+13.20%</div></span></div>
@@ -91,33 +125,35 @@
             <div class="cta">1. Capture my portfolio</div>
             <div class="hint">Opens each account and reads your data (~15s).</div>
             <div class="sec">2. Download a file</div>
-            <div class="jsonbtn">Full report · JSON</div>
-            <div class="exp"><span>Positions · CSV</span><span>Plans · CSV</span><span>History · CSV</span></div>
+            <div class="jsonbtn">Full report &middot; JSON</div>
+            <div class="exp"><span>Positions</span><span>Plans</span><span>History</span></div>
           </div>
           <div class="pf">Unofficial. Your data never leaves the browser.</div>
         </div>
       </div>
+      <div class="run bot"><span>xstation5.xtb.com</span><span class="r">Runs locally</span></div>
     </section>
 
     <!-- SLIDE 2 -->
     <section class="slide" id="s2">
+      <div class="run top"><span>Portfolio Export for XTB &middot; unofficial</span><span class="r">02 / 03</span></div>
       <div class="left">
-        <div class="kicker"><span class="dot"></span>FULLY AUTOMATIC</div>
+        <div class="kicker">Fully automatic</div>
         <h1>One click.<br /><span class="accent">Every account.</span></h1>
         <ul>
-          <li><span class="ck">✓</span> Auto-walks through IKE, IKZE, plans and single buys</li>
-          <li><span class="ck">✓</span> Single buys with the date &amp; price of every tranche</li>
-          <li><span class="ck">✓</span> Value, cash and profit / loss for every account</li>
-          <li><span class="ck">✓</span> Portfolio value over time — export as CSV</li>
+          <li><span class="no">01</span><span>Auto-walks through IKE, IKZE, plans and single buys</span></li>
+          <li><span class="no">02</span><span>Single buys with the date &amp; price of every tranche</span></li>
+          <li><span class="no">03</span><span>Value, cash and profit / loss for every account</span></li>
+          <li><span class="no">04</span><span>Portfolio value over time &mdash; export as CSV</span></li>
         </ul>
       </div>
       <div class="right">
         <div class="pop">
-          <div class="ph"><div class="mark"><i></i><i></i><i></i></div><div class="pt">Portfolio Export</div><div class="pv">v1.0</div></div>
+          <div class="ph"><img class="mark" src="store-icon-128.png" alt="" /><div class="pt">Portfolio Export</div><div class="pv">v1.0</div></div>
           <div class="pb">
             <div class="lab">Portfolio value</div>
             <div class="big">PLN 142,580.00</div>
-            <div class="pl"><span>▲ +PLN 11,240.00</span><span class="m">+8.55%</span></div>
+            <div class="pl"><span>&#9650; +PLN 11,240.00</span><span class="m">+8.55%</span></div>
             <div class="bks">
               <div class="row"><span class="bn">My Transactions</span><span class="cnt">1</span><span class="rr"><div class="rv">PLN 19,300.00</div><div class="rp">+8.90%</div></span></div>
               <div class="row"><span class="bn">IKE</span><span class="cnt">8</span><span class="rr"><div class="rv">PLN 61,400.00</div><div class="rp">+13.20%</div></span></div>
@@ -127,24 +163,26 @@
             <div class="cta">1. Capture my portfolio</div>
             <div class="hint">Opens each account and reads your data (~15s).</div>
             <div class="sec">2. Download a file</div>
-            <div class="jsonbtn">Full report · JSON</div>
-            <div class="exp"><span>Positions · CSV</span><span>Plans · CSV</span><span>History · CSV</span></div>
+            <div class="jsonbtn">Full report &middot; JSON</div>
+            <div class="exp"><span>Positions</span><span>Plans</span><span>History</span></div>
           </div>
           <div class="pf">Unofficial. Your data never leaves the browser.</div>
         </div>
       </div>
+      <div class="run bot"><span>IKE &middot; IKZE &middot; Investment Plans &middot; My Transactions</span><span class="r">~15 seconds</span></div>
     </section>
 
     <!-- SLIDE 3 -->
     <section class="slide" id="s3">
+      <div class="run top"><span>Portfolio Export for XTB &middot; unofficial</span><span class="r">03 / 03</span></div>
       <div class="left">
-        <div class="kicker"><span class="dot"></span>PRIVACY FIRST</div>
+        <div class="kicker">Privacy first</div>
         <h1>Full detail.<br /><span class="accent">100% local.</span></h1>
         <div class="sub">No servers, no separate login, no tokens in files. The export is built in your browser and stays on your disk.</div>
       </div>
       <div class="right">
         <div class="card">
-          <div class="bar"><b style="background:#f6465d"></b><b style="background:#e8c07d"></b><b style="background:#17c784"></b></div>
+          <div class="file"><span>xtb-portfolio-2026-09-04.json</span><span class="sz">JSON</span></div>
           <div class="code"><span class="k">"symbol"</span>: <span class="s">"VUAA.DE"</span>,
 <span class="k">"volume"</span>: <span class="n">74.7468</span>,
 <span class="k">"marketValue"</span>: <span class="n">40479.25</span>,
@@ -158,7 +196,7 @@
 ]</div>
         </div>
       </div>
-      <div class="badge"><span class="lk"></span>Zero network calls</div>
+      <div class="run bot"><span>Zero network calls</span><span class="r">Your disk only</span></div>
     </section>
   </body>
 </html>
