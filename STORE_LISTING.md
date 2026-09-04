@@ -14,7 +14,7 @@ locale is included (add it under **Store listing → + Add language**).
 
 ## Package to upload
 
-`dist/xtb-portfolio-export-1.0.0.zip`  (rebuild with `scripts/build.sh`)
+`dist/xtb-portfolio-export-1.1.0.zip`  (rebuild with `scripts/build.sh`)
 
 ---
 
