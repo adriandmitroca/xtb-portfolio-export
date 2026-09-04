@@ -170,7 +170,8 @@ https://github.com/adriandmitroca/xtb-portfolio-export/blob/main/PRIVACY.md
 ## Trademark note for review
 
 Using “XTB” descriptively (“for XTB”) is allowed; do not imply you are XTB or are
-endorsed by them. The name avoids their logo/red-X wordmark (the icon is a generic
-chart glyph), and the description states “unofficial / not affiliated with XTB”.
+endorsed by them. The name avoids their logo/red-X wordmark (the icon is a ledger
+page with an export arrow, and carries none of XTB’s brand colours), and the
+description states “unofficial / not affiliated with XTB”.
 Reviewers may also ask about the token read — it only inspects the non-secret
 account-number claim in memory and transmits nothing (documented in `PRIVACY.md`).
