@@ -5,11 +5,12 @@
 // All confirmed live against the xStation UI (2026-07):
 //   MainAccountService/GetRetirementAccounts        -> IKE/IKZE account list
 //   PositionService/SubscribePortfolioPositionGroups-> open positions per account
-//   InvestmentPlanService/SavingsPortfolioSubscribe -> Investment Plans
+//   InvestmentPlanService/SubscribeInvestmentPlans  -> Investment Plans (v2)
 //   RetirePortfolioService/GetAccountBalance        -> IKE/IKZE balance
 //
 // Encoding notes:
-//   money  = signed 64-bit varint, minor units (÷100)
+//   money  = signed 64-bit varint, minor units (÷100); plans v2 use scaled
+//            money { f1: signed unscaled, f2: scale } instead
 //   volume = Decimal { f1: unscaled, f2: scale } -> f1 * 10^-f2
 //   price  = float32/float64, as-is
 //   time   = unix epoch milliseconds
@@ -34,6 +35,12 @@
   }
 
   const money = (v) => Math.round(signed(v)) / 100;
+
+  // Scaled money { f1: signed unscaled, f2: scale } (e.g. {12345, 2} = 123.45).
+  function amount(m) {
+    if (!m || typeof m !== 'object') return 0;
+    return round(signed(m.f1) * Math.pow(10, -(Number(m.f2) || 0)), Number(m.f2) || 0);
+  }
 
   function decimal(d) {
     if (d === null || d === undefined) return 0;
@@ -140,49 +147,57 @@
     return rows;
   }
 
-  // ---- Investment plans --------------------------------------------------
-  function mapSavings(frames) {
+  // ---- Investment plans (saving.v2) --------------------------------------
+  // Every frame is a full snapshot; root = frame.f1.f1 {f1[] plans, f2 P/L,
+  // f4 total value}. v2 carries no currency and no holding price.
+  function mapSavings(frames, currency) {
     let root = null;
-    for (const f of frames) if (f && f.f2 && f.f2.f5) root = f.f2;
-    if (!root) return { totalValue: 0, totalPL: 0, currency: null, plans: [] };
-    const plansRaw = arr(root.f5);
-    const plans = plansRaw.map((p) => {
-      const holdingsRaw = arr(p.f13);
+    for (const f of frames) if (f && f.f1 && f.f1.f1 && f.f1.f1.f1) root = f.f1.f1;
+    if (!root) return { totalValue: 0, totalPL: 0, currency: currency || null, plans: [] };
+    const plans = arr(root.f1).map((p) => {
+      const currentValue = amount(p.f5);
+      const netPL = amount(p.f6 && p.f6.f1);
       return {
         planId: p.f1,
+        accountNo: p.f2,
         name: p.f3,
         statusCode: p.f4,
-        invested: money(p.f9),
-        currentValue: money(p.f7),
-        cash: money(p.f10),
-        netPL: money(p.f5),
-        plPct: p.f6,
+        unbalanced: p.f9 === 1,
+        invested: round(currentValue - netPL),
+        currentValue,
+        cash: amount(p.f7 && p.f7.f1),
+        netPL,
+        plPct: p.f6 && p.f6.f2,
         createdAt: iso(p.f12),
-        updatedAt: iso(p.f16),
-        holdings: holdingsRaw.map((h) => {
-          const price = h.f2;
-          const value = money(h.f7);
+        updatedAt: iso(p.f13),
+        holdings: arr(p.f10).map((h) => {
+          const value = amount(h.f3);
+          const cost = amount(h.f5);
+          const hPL = amount(h.f4 && h.f4.f1);
+          if (!approx(value - cost, hPL, Math.max(1, Math.abs(hPL) * 0.02)))
+            warn('plans: holding P/L != value - cost — schema may have changed');
           return {
-            symbol: h.f1 && h.f1.f1,
-            targetPct: h.f3,
-            price,
-            units: price ? round(value / price, 6) : null,
-            cost: money(h.f6),
+            symbol: h.f1 && h.f1.f3,
+            name: h.f1 && h.f1.f2,
+            instrumentId: h.f1 && h.f1.f1,
+            currentPct: h.f2 && h.f2.f1,
+            targetPct: h.f2 && h.f2.f2,
+            cost,
             value,
-            netPL: money(h.f4),
-            plPct: h.f5,
+            netPL: hPL,
+            plPct: h.f4 && h.f4.f2,
           };
         }),
       };
     });
-    const totalValue = money(root.f9);
+    const totalValue = amount(root.f4);
     const sumPlans = plans.reduce((s, p) => s + (p.currentValue || 0), 0);
     if (plans.length && !approx(sumPlans, totalValue, Math.max(2, totalValue * 0.01)))
       warn('plans: total value != sum of plans — schema may have changed');
     return {
-      currency: root.f7,
+      currency: currency || null,
       totalValue,
-      totalPL: money(root.f8),
+      totalPL: amount(root.f2 && root.f2.f1),
       plans,
     };
   }
@@ -201,6 +216,7 @@
   window.__XTB_MAP = {
     signed,
     money,
+    amount,
     decimal,
     round,
     RETIREMENT_TYPE,
@@ -217,7 +233,7 @@
     match(method) {
       if (/GetRetirementAccounts/.test(method)) return 'retirement';
       if (/SubscribePortfolioPositionGroups/.test(method)) return 'positions';
-      if (/SavingsPortfolioSubscribe/.test(method)) return 'savings';
+      if (/SubscribeInvestmentPlans/.test(method)) return 'savings';
       if (/GetAccountBalance/.test(method)) return 'balance';
       return 'other';
     },

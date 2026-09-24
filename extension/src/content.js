@@ -72,6 +72,17 @@
     return r ? r.bucket : 'My Transactions';
   }
 
+  // Plans v2 carry no currency; they live under the main account, whose
+  // currency xStation keeps in localStorage.
+  function accountCurrency() {
+    try {
+      const a = JSON.parse(localStorage.getItem('lastAccountIpax') || 'null');
+      return (a && a.currency) || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   function buildSnapshot() {
     MAP.resetWarnings();
     const positions = [];
@@ -83,7 +94,7 @@
       const bucket = bucketOf(accountNo);
       if (rec.key === 'positions') MAP.mapPositions(rec.frames).forEach((p) => positions.push({ bucket, accountNo, ...p }));
       else if (rec.key === 'balance') balances.push({ bucket, accountNo, ...MAP.mapBalance(rec.frames) });
-      else if (rec.key === 'savings') savings = MAP.mapSavings(rec.frames);
+      else if (rec.key === 'savings') savings = MAP.mapSavings(rec.frames, accountCurrency());
     }
 
     const agg = {};
@@ -277,10 +288,11 @@
           planInvested: p.invested,
           planCash: p.cash,
           planPL: p.netPL,
+          planUnbalanced: p.unbalanced,
           symbol: h.symbol,
+          name: h.name,
+          currentPct: h.currentPct,
           targetPct: h.targetPct,
-          units: h.units,
-          price: h.price,
           cost: h.cost,
           value: h.value,
           netPL: h.netPL,

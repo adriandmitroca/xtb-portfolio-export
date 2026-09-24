@@ -108,29 +108,60 @@ const posGroup = {
   ok(MAP.getWarnings().some((w) => /equity/.test(w)), 'warns when equity != mv + free');
 }
 
-// ---- savings / plans -----------------------------------------------------
+// ---- savings / plans (saving.v2) ----------------------------------------
+// Synthetic: one plan worth 5000.00 = holding 4900.00 + cash 100.00; holding
+// cost 4000.00, P/L 900.00. Second plan is at a loss (negative scaled money).
+const amt = (v) => ({ f1: v, f2: 2 });
+const planV2 = {
+  f1: 1, f2: 50000009, f3: 'Growth', f4: 1, f9: 1,
+  f5: amt(500000), f6: { f1: amt(90000), f2: 21.95 }, f7: { f1: amt(10000), f2: 2.0 },
+  f10: [{ f1: { f1: 99002, f2: 'Test ETF', f3: 'TEST.UK', f4: 2 }, f2: { f1: 98.0, f2: 100 }, f3: amt(490000), f4: { f1: amt(90000), f2: 22.5 }, f5: amt(400000) }],
+  f12: 1700000000000, f13: 1700000100000,
+};
+const lossPlan = {
+  f1: 2, f3: 'Dip', f4: 1,
+  f5: amt(9000), f6: { f1: amt(-1000), f2: -10 }, f7: { f1: amt(0), f2: 0 },
+  f10: [{ f1: { f1: 99003, f2: 'Other', f3: 'OTHR.DE' }, f2: { f1: 100, f2: 100 }, f3: amt(9000), f4: { f1: amt(-1000), f2: -10 }, f5: amt(10000) }],
+};
+const savV2 = (plans, total, pl) => ({ f1: { f1: { f1: plans, f2: { f1: amt(pl), f2: 0 }, f4: amt(total) } } });
 {
-  const sav = {
-    f2: {
-      f7: 'PLN',
-      f8: 100000,
-      f9: 500000,
-      f5: [
-        {
-          f1: 1, f3: 'Growth', f4: 2, f9: 400000, f7: 500000, f5: 100000, f6: 25.0, f10: 10000,
-          f13: [{ f1: { f1: 'TEST.UK' }, f2: 50.0, f3: 100, f4: 90000, f5: 22.5, f6: 400000, f7: 490000 }],
-        },
-      ],
-    },
-  };
+  // Round-trip the negative scaled money through the real decoder.
+  const d = DEC.decode(Uint8Array.from(lenDelim(1, cat(vfield(1, -1000), vfield(2, 2)))));
+  near(MAP.amount(d.f1), -10.0, 'signed scaled money handles negative unscaled');
+
   MAP.resetWarnings();
-  const s = MAP.mapSavings([sav]);
-  near(s.totalValue, 5000.0, 'plans total value');
-  eq(s.plans.length, 1, 'one plan');
-  eq(s.plans[0].name, 'Growth', 'plan name');
-  near(s.plans[0].cash, 100.0, 'plan cash');
-  near(s.plans[0].holdings[0].netPL, 900.0, 'holding netPL (value - cost)');
-  eq(MAP.getWarnings().length, 0, 'plans invariant holds');
+  const s = MAP.mapSavings([savV2([], 0, 0), savV2([planV2, lossPlan], 509000, 89000)], 'PLN');
+  near(s.totalValue, 5090.0, 'plans total value (last frame wins)');
+  near(s.totalPL, 890.0, 'plans total P/L');
+  eq(s.currency, 'PLN', 'plans currency comes from the account');
+  eq(s.plans.length, 2, 'two plans');
+  const p = s.plans[0];
+  eq(p.name, 'Growth', 'plan name');
+  eq(p.accountNo, 50000009, 'plan account number');
+  eq(p.unbalanced, true, 'plan unbalanced flag');
+  near(p.currentValue, 5000.0, 'plan value');
+  near(p.cash, 100.0, 'plan cash');
+  near(p.invested, 4100.0, 'plan invested = value - P/L');
+  ok(!!p.createdAt && !!p.updatedAt, 'plan timestamps');
+  const h = p.holdings[0];
+  eq(h.symbol, 'TEST.UK', 'holding symbol');
+  eq(h.name, 'Test ETF', 'holding name');
+  near(h.currentPct, 98.0, 'holding current %');
+  near(h.targetPct, 100, 'holding target %');
+  near(h.value, 4900.0, 'holding value');
+  near(h.cost, 4000.0, 'holding cost');
+  near(h.netPL, 900.0, 'holding netPL');
+  near(h.value + p.cash, p.currentValue, 'holdings + cash = plan value');
+  near(s.plans[1].netPL, -10.0, 'loss plan negative P/L');
+  eq(s.plans[1].unbalanced, false, 'plan without f9 is balanced');
+  eq(MAP.getWarnings().length, 0, 'plans invariants hold');
+
+  MAP.resetWarnings();
+  MAP.mapSavings([savV2([planV2], 999999, 900)], 'PLN');
+  ok(MAP.getWarnings().some((w) => /total value/.test(w)), 'warns when plan total != sum of plans');
+
+  eq(MAP.match('pl.xtb.ipax.pub.grpc.investmentplan.saving.v2.InvestmentPlanService/SubscribeInvestmentPlans'), 'savings', 'v2 plans method routes to savings');
+  eq(MAP.match('pl.xtb.ipax.pub.grpc.investmentplan.assignment.v1.InvestmentPlanFlagsService/SubscribeInvestmentPlanFlags'), 'other', 'plan flags stream is ignored');
 }
 
 // ---- retirement accounts -------------------------------------------------
