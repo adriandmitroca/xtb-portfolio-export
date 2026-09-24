@@ -1,50 +1,90 @@
 name: Release
 
-# Publishes to the Chrome Web Store when you push a tag like `v0.3.0`.
-# The tag MUST match the version in extension/manifest.json.
+# On every push to main, semantic-release reads the conventional commits since
+# the last v* tag: fix -> patch, feat -> minor, BREAKING CHANGE -> major. When a
+# release is due it bumps extension/manifest.json, commits that back to main,
+# tags vX.Y.Z, creates a GitHub Release with the zip, and this job then uploads
+# and publishes the zip to the Chrome Web Store. docs/chore/ci commits release
+# nothing.
 #
-# One-time setup (see RELEASE.md): create the item with a manual upload once,
-# then add these repository secrets:
-#   CHROME_EXTENSION_ID, CHROME_CLIENT_ID, CHROME_CLIENT_SECRET, CHROME_REFRESH_TOKEN
+# Secrets: CHROME_EXTENSION_ID, CHROME_PUBLISHER_ID, CHROME_CLIENT_ID,
+# CHROME_CLIENT_SECRET, CHROME_REFRESH_TOKEN (see RELEASE.md).
 
 on:
   push:
-    tags: ['v*']
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      republish:
+        description: 'Existing version to re-upload to the store (e.g. 1.1.1) when a store upload failed after tagging. Leave empty to run a normal release.'
+        required: false
 
 permissions:
-  contents: read
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
-  publish:
+  release:
+    if: ${{ !inputs.republish }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
-      - name: Tag must match manifest version
-        run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          VER="$(node -e "process.stdout.write(require('./extension/manifest.json').version)")"
-          echo "tag=$TAG  manifest=$VER"
-          if [ "$TAG" != "$VER" ]; then
-            echo "::error::Tag v$TAG does not match manifest version $VER. Bump the manifest and re-tag."
-            exit 1
-          fi
+      - name: Unit tests
+        run: node test/run.js
 
-      - name: Build package
-        id: build
-        run: |
-          bash scripts/build.sh
-          VER="$(node -e "process.stdout.write(require('./extension/manifest.json').version)")"
-          echo "zip=dist/xtb-portfolio-export-$VER.zip" >> "$GITHUB_OUTPUT"
+      - name: Semantic release
+        id: release
+        uses: cycjimmy/semantic-release-action@b12c8f6015dc215fe37bc154d4ad456dd3833c90 # v6.0.0
+        with:
+          extra_plugins: |
+            @semantic-release/exec
+            @semantic-release/git
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to Chrome Web Store
-        uses: mnao305/chrome-extension-upload@v5.0.0
+        if: steps.release.outputs.new_release_published == 'true'
+        uses: mnao305/chrome-extension-upload@f549d5d654694a7722d6abfa64c97409ad5e64c1 # v7.0.0
         with:
-          file-path: ${{ steps.build.outputs.zip }}
+          file-path: dist/xtb-portfolio-export-${{ steps.release.outputs.new_release_version }}.zip
           extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          publisher-id: ${{ secrets.CHROME_PUBLISHER_ID }}
+          client-id: ${{ secrets.CHROME_CLIENT_ID }}
+          client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          publish: true
+
+  # semantic-release will not re-release a version it already tagged, so a
+  # failed store upload is retried from the tag here.
+  republish:
+    if: ${{ inputs.republish }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: v${{ inputs.republish }}
+
+      - name: Build package
+        run: bash scripts/build.sh
+
+      - name: Publish to Chrome Web Store
+        uses: mnao305/chrome-extension-upload@f549d5d654694a7722d6abfa64c97409ad5e64c1 # v7.0.0
+        with:
+          file-path: dist/xtb-portfolio-export-${{ inputs.republish }}.zip
+          extension-id: ${{ secrets.CHROME_EXTENSION_ID }}
+          publisher-id: ${{ secrets.CHROME_PUBLISHER_ID }}
           client-id: ${{ secrets.CHROME_CLIENT_ID }}
           client-secret: ${{ secrets.CHROME_CLIENT_SECRET }}
           refresh-token: ${{ secrets.CHROME_REFRESH_TOKEN }}

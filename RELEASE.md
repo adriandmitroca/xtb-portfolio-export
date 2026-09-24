@@ -17,15 +17,9 @@ to upload to the Chrome Web Store or to load unpacked.
    review. This must be manual — it's what creates the extension ID and accepts
    the data-use disclosures. Start **Unlisted** to shake out review feedback,
    then flip to **Public** once it's approved and you're happy.
-3. **Every update after that — automated:** bump `version` in
-   `extension/manifest.json`, commit, then push a matching tag:
-
-   ```sh
-   git tag v0.3.1 && git push origin v0.3.1
-   ```
-
-   The `Release` GitHub Action builds the zip and publishes the new version to
-   the Store. No manual upload again.
+3. **Every update after that — automated:** merge conventional commits to
+   `main`. The `Release` workflow picks the next version and publishes it (see
+   [Automated releases](#automated-releases-cicd)).
 
 ## Options, simplest first
 
@@ -91,18 +85,32 @@ Two GitHub Actions workflows are included:
 - **`.github/workflows/ci.yml`** — on every push/PR: validates the manifest,
   `node --check`s all scripts, fails on Unicode noncharacters (which Chrome's
   content-script loader rejects), builds the zip, and uploads it as an artifact.
-- **`.github/workflows/release.yml`** — on a `v*` tag: verifies the tag matches
-  the manifest version, builds the zip, and publishes it to the Chrome Web Store
-  via the [`mnao305/chrome-extension-upload`] action.
+- **`.github/workflows/release.yml`** — on every push to `main`: runs the
+  tests, then [semantic-release] (`.releaserc.json`) reads the conventional
+  commits since the last `v*` tag and picks the next version:
+
+  | Commit | Release |
+  | --- | --- |
+  | `fix: …` | patch (1.1.0 → 1.1.1) |
+  | `feat: …` | minor (1.1.0 → 1.2.0) |
+  | `feat!: …` or a `BREAKING CHANGE:` footer | major (1.1.0 → 2.0.0) |
+  | `docs:`, `chore:`, `ci:`, `test:`, `refactor:`, `style:` | none |
+
+  When a release is due it writes the version into `extension/manifest.json`,
+  commits it back as `chore(release): X.Y.Z [skip ci]`, tags `vX.Y.Z`, creates
+  a GitHub Release with the zip, and uploads + publishes the zip to the Chrome
+  Web Store via [`mnao305/chrome-extension-upload`] (Web Store API v2). Run
+  `git pull` after a release to pick up the version commit.
 
 ### One-time secret setup
 
-The `Release` workflow needs four repository secrets
-(**Settings → Secrets and variables → Actions**):
+The `Release` workflow needs five repository secrets
+(**Settings → Secrets and variables → Actions**, or `gh secret set NAME`):
 
 | Secret | Where it comes from |
 | --- | --- |
 | `CHROME_EXTENSION_ID` | The item's ID, shown in the Dashboard after the first manual upload. |
+| `CHROME_PUBLISHER_ID` | Developer Dashboard → **Publisher → Settings**. |
 | `CHROME_CLIENT_ID` | Google Cloud OAuth 2.0 **Desktop** client. |
 | `CHROME_CLIENT_SECRET` | …same OAuth client. |
 | `CHROME_REFRESH_TOKEN` | Generated once via the OAuth consent flow (below). |
@@ -111,36 +119,38 @@ Steps:
 
 1. **Create the item** with one manual upload → copy the **extension ID**.
 2. In **Google Cloud Console**: create a project → enable the **Chrome Web Store
-   API** → **OAuth consent screen** (External, add yourself as a test user) →
-   **Credentials → Create OAuth client ID → Desktop app**. Copy the client ID and
-   secret.
+   API** → **OAuth consent screen** (External, add yourself as a test user,
+   then set the publishing status to **In production** — in *Testing* the
+   refresh token expires after 7 days) → **Credentials → Create OAuth client
+   ID → Desktop app**. Copy the client ID and secret.
 3. **Get a refresh token** (scope `https://www.googleapis.com/auth/chromewebstore`):
-   open the consent URL with your client ID, approve, exchange the returned code
-   for a refresh token. The action's
-   [README](https://github.com/mnao305/chrome-extension-upload#how-to-get-the-keys)
-   walks through the exact `curl` calls.
-4. Add the four values as repository secrets.
+   open
+   `https://accounts.google.com/o/oauth2/auth?response_type=code&access_type=offline&prompt=consent&scope=https://www.googleapis.com/auth/chromewebstore&redirect_uri=http://localhost:8818&client_id=CLIENT_ID`,
+   approve, copy `code` from the failed `localhost` redirect, then exchange it:
 
-### Cutting a release
+   ```sh
+   curl -s https://oauth2.googleapis.com/token -d client_id=CLIENT_ID \
+     -d client_secret=CLIENT_SECRET -d code=CODE \
+     -d grant_type=authorization_code -d redirect_uri=http://localhost:8818
+   ```
 
-```sh
-# bump extension/manifest.json "version", commit, then:
-git tag v0.3.1
-git push origin v0.3.1
-```
+4. Add the five values as repository secrets.
+
+### When the store upload fails
+
+The tag and GitHub Release already exist, so a normal re-run releases nothing.
+Fix the cause, then **Actions → Release → Run workflow** with `republish` set to
+the version (e.g. `1.1.1`). It rebuilds from that tag and uploads it again.
 
 Notes:
-- The tag and `manifest.json` version must match, or the workflow fails fast.
 - `publish: true` submits the new version for review immediately. Set it to
-  `false` in `release.yml` if you'd rather upload a draft and click Publish
-  yourself.
-- For extra supply-chain safety, pin the publish action to a commit SHA instead
-  of `@v5.0.0`.
+  `false` in `release.yml` to upload a draft and click Publish yourself.
+- Both third-party actions are pinned to commit SHAs.
 
+[semantic-release]: https://semantic-release.gitbook.io
 [`mnao305/chrome-extension-upload`]: https://github.com/mnao305/chrome-extension-upload
 
 ## Versioning
 
-Bump `version` in `extension/manifest.json` (semver) before each upload; the
-Store rejects re-uploads of an existing version number. The `Release` workflow
-enforces that the git tag equals the manifest version.
+Do not edit `version` in `extension/manifest.json` by hand — semantic-release
+owns it. The commit type decides the next version (table above).
